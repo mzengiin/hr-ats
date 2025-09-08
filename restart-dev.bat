@@ -1,0 +1,3 @@
+@echo off
+echo Restarting CVFlow Development Environment...
+powershell -ExecutionPolicy Bypass -File .\scripts\restart-dev.ps1 %*

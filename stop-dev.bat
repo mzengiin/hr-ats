@@ -1,0 +1,3 @@
+@echo off
+echo Stopping CVFlow Development Environment...
+powershell -ExecutionPolicy Bypass -File .\scripts\stop-dev.ps1 %*
