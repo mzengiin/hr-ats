@@ -1,0 +1,8 @@
+-- Mock candidates data insertion
+INSERT INTO candidates (first_name, last_name, email, phone, position, application_channel, application_date, hr_specialist, status, notes, cv_file_path, created_at, updated_at) VALUES
+('Sophia', 'Clark', 'sophia.clark@email.com', '+90 555 123 45 67', 'Yazılım Mühendisi', 'LinkedIn', '2023-01-15 10:30:00+00', 'Ahmet Yılmaz', 'Başvurdu', 'Deneyimli bir yazılım mühendisi, özellikle web geliştirme konusunda uzman.', '/uploads/cv/test_cv.docx', '2023-01-15 10:30:00+00', '2023-01-15 10:30:00+00'),
+('Ethan', 'Bennett', 'ethan.bennett@email.com', '+90 555 234 56 78', 'Ürün Yöneticisi', 'Kariyer.net', '2023-02-20 14:15:00+00', 'Ayşe Kaya', 'Mülakat', 'Ürün yönetimi konusunda 5 yıllık deneyim, güçlü analitik beceriler.', '/uploads/cv/test_cv.docx', '2023-02-20 14:15:00+00', '2023-02-20 14:15:00+00'),
+('Olivia', 'Carter', 'olivia.carter@email.com', '+90 555 345 67 89', 'Veri Analisti', 'Referanslı', '2023-03-10 09:45:00+00', 'Mehmet Kaya', 'Teklif', 'Veri bilimi ve makine öğrenmesi konularında uzman.', '/uploads/cv/test_cv.docx', '2023-03-10 09:45:00+00', '2023-03-10 09:45:00+00'),
+('Liam', 'Foster', 'liam.foster@email.com', '+90 555 456 78 90', 'UX Tasarımcısı', 'İş Görüşmesi', '2023-04-05 16:20:00+00', 'Elif Can', 'Reddedildi', 'Yaratıcı tasarım becerileri güçlü, ancak teknik gereksinimler karşılanamadı.', '/uploads/cv/test_cv.docx', '2023-04-05 16:20:00+00', '2023-04-05 16:20:00+00'),
+('Ava', 'Harper', 'ava.harper@email.com', '+90 555 567 89 01', 'Pazarlama Uzmanı', 'LinkedIn', '2023-05-12 11:30:00+00', 'Zeynep Öz', 'Başvurdu', 'Dijital pazarlama konusunda deneyimli, sosyal medya yönetimi uzmanı.', '/uploads/cv/test_cv.docx', '2023-05-12 11:30:00+00', '2023-05-12 11:30:00+00');
+

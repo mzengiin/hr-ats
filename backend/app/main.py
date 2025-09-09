@@ -11,12 +11,17 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS middleware - Acil çözüm
+# CORS middleware - Düzeltilmiş ayarlar
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:3001", 
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001"
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
     expose_headers=["*"],
 )
@@ -32,17 +37,15 @@ async def health_check():
 # CORS middleware otomatik olarak OPTIONS request'leri hallediyor
 
 # Import models to ensure they are registered
-from app.models.user import User
-from app.models.user_role import UserRole
-from app.models.refresh_token import RefreshToken
-from app.models.audit_log import AuditLog
-from app.models.cv_file import CVFile
+from app.models import *  # This will import all models
 
 # Include API routers
-from app.api.v1 import auth, users, files, roles
+from app.api.v1 import auth, users, files, roles, dashboard, candidates
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(users.router, prefix="/api/v1/users", tags=["Users"])
 app.include_router(files.router, prefix="/api/v1/files", tags=["Files"])
 app.include_router(roles.router, prefix="/api/v1/roles", tags=["Roles"])
+app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["Dashboard"])
+app.include_router(candidates.router, prefix="/api/v1/candidates", tags=["Candidates"])
 

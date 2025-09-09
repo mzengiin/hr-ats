@@ -2,7 +2,11 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginForm from './components/LoginForm';
-import Dashboard from './components/Dashboard';
+import Layout from './components/Layout';
+import DashboardNew from './components/DashboardNew';
+import CandidateList from './components/CandidateList';
+import CandidateForm from './components/CandidateForm';
+import CandidateDetail from './components/CandidateDetail';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
@@ -30,19 +34,24 @@ function AppContent() {
             } 
           />
           <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
             path="/" 
             element={
-              <Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />
-            } 
-          />
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="dashboard" element={<DashboardNew />} />
+            <Route path="candidates" element={<CandidateList />} />
+            <Route path="candidates/new" element={<CandidateForm />} />
+            <Route path="candidates/:id" element={<CandidateDetail />} />
+            <Route path="candidates/:id/edit" element={<CandidateForm />} />
+            <Route path="interviews" element={<div className="p-8"><h1 className="text-2xl font-bold">Mülakat Takvimi</h1><p className="text-gray-600">Bu sayfa yakında eklenecek...</p></div>} />
+            <Route path="case-studies" element={<div className="p-8"><h1 className="text-2xl font-bold">Vaka Çalışmaları</h1><p className="text-gray-600">Bu sayfa yakında eklenecek...</p></div>} />
+            <Route path="users" element={<div className="p-8"><h1 className="text-2xl font-bold">Kullanıcı Yönetimi</h1><p className="text-gray-600">Bu sayfa yakında eklenecek...</p></div>} />
+            <Route path="reports" element={<div className="p-8"><h1 className="text-2xl font-bold">Raporlar</h1><p className="text-gray-600">Bu sayfa yakında eklenecek...</p></div>} />
+          </Route>
         </Routes>
       </div>
     </Router>

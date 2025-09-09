@@ -11,9 +11,17 @@ import UserProfile from '../components/UserProfile';
 
 // Mock API service
 jest.mock('../services/api', () => ({
+  default: {
+    interceptors: {
+      response: {
+        use: jest.fn(),
+      },
+    },
+  },
   authAPI: {
     login: jest.fn(),
     logout: jest.fn(),
+    refreshToken: jest.fn(),
     getCurrentUser: jest.fn(),
     changePassword: jest.fn(),
   },
@@ -368,6 +376,7 @@ describe('Frontend Authentication Integration', () => {
     });
   });
 });
+
 
 
 

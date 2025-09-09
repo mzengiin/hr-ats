@@ -4,25 +4,27 @@
 .user-profile-container {
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 24px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .profile-header {
   display: flex;
   align-items: center;
   gap: 20px;
-  padding: 30px;
+  padding: 32px;
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  margin-bottom: 24px;
 }
 
 .profile-avatar {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #8b5cf6, #a855f7);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -37,48 +39,52 @@
 
 .profile-info h1 {
   margin: 0 0 8px 0;
-  color: #333;
+  color: #1f2937;
   font-size: 28px;
   font-weight: 600;
 }
 
 .profile-email {
   margin: 0 0 12px 0;
-  color: #666;
+  color: #6b7280;
   font-size: 16px;
 }
 
 .role-badge {
   display: inline-block;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .role-admin {
-  background: #fee;
-  color: #c33;
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
 }
 
 .role-hr {
-  background: #eef;
-  color: #336;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
 }
 
 .role-user {
-  background: #efe;
-  color: #363;
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
 }
 
 .profile-tabs {
   display: flex;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  margin-bottom: 24px;
   overflow: hidden;
 }
 
@@ -87,36 +93,37 @@
   padding: 16px 24px;
   border: none;
   background: white;
-  color: #666;
-  font-size: 16px;
+  color: #6b7280;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  border-bottom: 3px solid transparent;
+  border-bottom: 2px solid transparent;
 }
 
 .tab-button:hover {
-  background: #f8f9fa;
-  color: #333;
+  background: #f8fafc;
+  color: #374151;
 }
 
 .tab-button.active {
-  background: #f8f9fa;
-  color: #667eea;
-  border-bottom-color: #667eea;
+  background: #f8fafc;
+  color: #8b5cf6;
+  border-bottom-color: #8b5cf6;
 }
 
 .profile-content {
   background: white;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  padding: 30px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  padding: 32px;
 }
 
 .profile-content h2 {
   margin: 0 0 24px 0;
-  color: #333;
-  font-size: 24px;
+  color: #1f2937;
+  font-size: 20px;
   font-weight: 600;
 }
 
@@ -147,16 +154,18 @@
 
 .form-group input {
   padding: 12px 16px;
-  border: 2px solid #e1e5e9;
+  border: 1px solid #d1d5db;
   border-radius: 8px;
-  font-size: 16px;
+  font-size: 14px;
   transition: all 0.2s ease;
+  background: #f9fafb;
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+  background: white;
 }
 
 .form-group input:disabled {
@@ -170,12 +179,12 @@
 }
 
 .submit-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #8b5cf6;
   color: white;
   border: none;
   border-radius: 8px;
-  padding: 14px 24px;
-  font-size: 16px;
+  padding: 12px 20px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -183,8 +192,9 @@
 }
 
 .submit-button:hover:not(:disabled) {
+  background: #7c3aed;
   transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
 }
 
 .submit-button:disabled {
@@ -223,22 +233,24 @@
 }
 
 .status-badge {
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .status-badge.active {
-  background: #efe;
-  color: #363;
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
 }
 
 .status-badge.inactive {
-  background: #fee;
-  color: #c33;
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
 }
 
 .setting-actions {

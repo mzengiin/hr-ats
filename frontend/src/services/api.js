@@ -151,6 +151,82 @@ export const usersAPI = {
     api.get('/users/stats/overview/'),
 };
 
+export const dashboardAPI = {
+  // Get dashboard statistics
+  getStatistics: () => 
+    api.get('/dashboard/statistics'),
+
+  // Get candidate status distribution
+  getCandidateStatusDistribution: () => 
+    api.get('/dashboard/candidate-status-distribution'),
+
+  // Get position application volume
+  getPositionApplicationVolume: () => 
+    api.get('/dashboard/position-application-volume'),
+
+  // Get upcoming interviews
+  getUpcomingInterviews: () => 
+    api.get('/dashboard/upcoming-interviews'),
+
+  // Get all dashboard data
+  getDashboardData: () => 
+    api.get('/dashboard/dashboard-data'),
+};
+
+export const candidatesAPI = {
+  // Get candidates list with pagination and filters
+  getCandidates: (params = {}) => 
+    api.get('/candidates', { params }),
+
+  // Get candidate by ID
+  getCandidate: (id) => 
+    api.get(`/candidates/${id}`),
+
+  // Create new candidate
+  createCandidate: (formData) => 
+    api.post('/candidates/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }),
+
+  // Update candidate
+  updateCandidate: (id, formData) => 
+    api.put(`/candidates/${id}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }),
+
+  // Delete candidate
+  deleteCandidate: (id) => 
+    api.delete(`/candidates/${id}`),
+
+  // Get all options
+  getOptions: () => 
+    api.get('/candidates/candidates-options'),
+
+  // Get candidate interviews
+  getCandidateInterviews: (candidateId) => 
+    api.get(`/candidates/candidates/${candidateId}/interviews`),
+
+  // Get candidate case studies
+  getCandidateCaseStudies: (candidateId) => 
+    api.get(`/candidates/candidates/${candidateId}/case-studies`),
+
+  // Download candidate CV
+  downloadCandidateCv: (candidateId) => 
+    api.get(`/candidates/${candidateId}/cv/download`, {
+      responseType: 'blob'
+    }),
+
+  // View candidate CV
+  viewCandidateCv: (candidateId) => 
+    api.get(`/candidates/${candidateId}/cv/view`, {
+      responseType: 'blob'
+    }),
+};
+
 // Error handler
 export const handleAPIError = (error) => {
   if (error.response) {
