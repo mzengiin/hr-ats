@@ -172,13 +172,44 @@ const CandidateForm = () => {
       
       setCvFile(file);
       setError(null);
+      
+      // If in edit mode, hide upload area and show file info
+      if (isEdit) {
+        setShowCvUpload(false);
+        setExistingCv({
+          name: file.name,
+          path: null // Will be set after upload
+        });
+      }
     }
   };
 
-  const handleRemoveCv = () => {
-    setExistingCv(null);
-    setCvFile(null);
-    setShowCvUpload(true);
+  const handleRemoveCv = async () => {
+    if (isEdit && id) {
+      try {
+        // Delete CV file from backend
+        await candidatesAPI.deleteCandidateCv(id);
+        
+        // Update local state
+        setExistingCv(null);
+        setCvFile(null);
+        setShowCvUpload(true);
+        
+        setSuccessMessage('CV başarıyla silindi!');
+        setTimeout(() => {
+          setSuccessMessage('');
+        }, 3000);
+        
+      } catch (err) {
+        setError(handleAPIError(err));
+        console.error('Error removing CV:', err);
+      }
+    } else {
+      // For new candidates, just clear the state
+      setExistingCv(null);
+      setCvFile(null);
+      setShowCvUpload(true);
+    }
   };
 
   const handleViewCv = async () => {
@@ -226,13 +257,19 @@ const CandidateForm = () => {
         let filename = `${formData.first_name}_${formData.last_name}_CV`; // fallback without extension
         
         if (contentDisposition) {
+          console.log('Content-Disposition header:', contentDisposition);
           const filenameMatch = contentDisposition.match(/filename="(.+)"/);
           if (filenameMatch) {
             filename = filenameMatch[1];
+            console.log('Parsed filename from header:', filename);
+          } else {
+            console.log('Could not parse filename from header');
           }
+        } else {
+          console.log('No content-disposition header found');
         }
         
-        console.log('Download filename:', filename);
+        console.log('Final download filename:', filename);
         
         // Determine blob type based on filename extension
         let fileExtension = filename.split('.').pop().toLowerCase();
@@ -248,16 +285,19 @@ const CandidateForm = () => {
           const contentType = response.headers['content-type'];
           console.log('Content-Type from response:', contentType);
           if (contentType) {
-            if (contentType.includes('pdf')) {
+            if (contentType.includes('application/pdf')) {
               fileExtension = 'pdf';
-            } else if (contentType.includes('docx')) {
+            } else if (contentType.includes('application/vnd.openxmlformats-officedocument.wordprocessingml.document')) {
               fileExtension = 'docx';
-            } else if (contentType.includes('doc')) {
+            } else if (contentType.includes('application/msword')) {
               fileExtension = 'doc';
+            } else if (contentType.includes('text/plain')) {
+              fileExtension = 'txt';
             } else {
               fileExtension = 'pdf'; // default fallback
             }
             filename = `${formData.first_name}_${formData.last_name}_CV.${fileExtension}`;
+            console.log('Content-Type based filename:', filename);
           }
         }
         
@@ -320,6 +360,21 @@ const CandidateForm = () => {
       if (isEdit) {
         response = await candidatesAPI.updateCandidate(id, formDataToSend);
         setSuccessMessage('Aday bilgileri başarıyla güncellendi!');
+        
+        // If CV was uploaded, update the state to show the uploaded file
+        if (cvFile) {
+          // Extract filename from backend path
+          const filename = response.data.cv_file_path ? 
+            response.data.cv_file_path.split('/').pop() : 
+            cvFile.name;
+          
+          setExistingCv({
+            name: filename,
+            path: response.data.cv_file_path
+          });
+          setShowCvUpload(false);
+          setCvFile(null); // Clear the selected file
+        }
       } else {
         response = await candidatesAPI.createCandidate(formDataToSend);
         setSuccessMessage('Aday başarıyla eklendi!');
