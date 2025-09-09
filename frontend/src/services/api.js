@@ -225,6 +225,10 @@ export const candidatesAPI = {
     api.get(`/candidates/${candidateId}/cv/view`, {
       responseType: 'blob'
     }),
+
+  // Delete candidate CV
+  deleteCandidateCv: (candidateId) => 
+    api.delete(`/candidates/${candidateId}/cv`),
 };
 
 // Error handler

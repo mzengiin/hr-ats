@@ -90,13 +90,19 @@ const CandidateDetail = () => {
         let filename = `${candidate.first_name}_${candidate.last_name}_CV`; // fallback without extension
         
         if (contentDisposition) {
+          console.log('Detail Content-Disposition header:', contentDisposition);
           const filenameMatch = contentDisposition.match(/filename="(.+)"/);
           if (filenameMatch) {
             filename = filenameMatch[1];
+            console.log('Detail Parsed filename from header:', filename);
+          } else {
+            console.log('Detail Could not parse filename from header');
           }
+        } else {
+          console.log('Detail No content-disposition header found');
         }
         
-        console.log('Detail Download filename:', filename);
+        console.log('Detail Final download filename:', filename);
         
         // Determine blob type based on filename extension
         let fileExtension = filename.split('.').pop().toLowerCase();
@@ -112,16 +118,19 @@ const CandidateDetail = () => {
           const contentType = response.headers['content-type'];
           console.log('Content-Type from response:', contentType);
           if (contentType) {
-            if (contentType.includes('pdf')) {
+            if (contentType.includes('application/pdf')) {
               fileExtension = 'pdf';
-            } else if (contentType.includes('docx')) {
+            } else if (contentType.includes('application/vnd.openxmlformats-officedocument.wordprocessingml.document')) {
               fileExtension = 'docx';
-            } else if (contentType.includes('doc')) {
+            } else if (contentType.includes('application/msword')) {
               fileExtension = 'doc';
+            } else if (contentType.includes('text/plain')) {
+              fileExtension = 'txt';
             } else {
               fileExtension = 'pdf'; // default fallback
             }
             filename = `${candidate.first_name}_${candidate.last_name}_CV.${fileExtension}`;
+            console.log('Detail Content-Type based filename:', filename);
           }
         }
         

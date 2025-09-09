@@ -375,6 +375,19 @@ async def update_candidate(
         
         # Handle CV file upload
         if cv_file:
+            # Delete old CV file if it exists
+            if candidate.cv_file_path:
+                old_file_path = f"/app{candidate.cv_file_path}"
+                try:
+                    if os.path.exists(old_file_path):
+                        os.remove(old_file_path)
+                        print(f"Deleted old CV file: {old_file_path}")
+                    else:
+                        print(f"Old CV file not found on disk: {old_file_path}")
+                except Exception as file_error:
+                    print(f"Error deleting old CV file {old_file_path}: {file_error}")
+                    # Continue with new file upload even if old file deletion fails
+            
             # Validate file type
             file_extension = os.path.splitext(cv_file.filename)[1].lower()
             allowed_extensions = ['.pdf', '.doc', '.docx']
@@ -421,7 +434,7 @@ async def update_candidate(
 
 @router.delete("/{candidate_id}")
 async def delete_candidate(candidate_id: int, db: Session = Depends(get_db)):
-    """Delete a candidate (soft delete)"""
+    """Delete a candidate (soft delete) and remove CV file from disk"""
     try:
         candidate = db.query(Candidate).filter(
             and_(Candidate.id == candidate_id, Candidate.is_active == True)
@@ -429,6 +442,19 @@ async def delete_candidate(candidate_id: int, db: Session = Depends(get_db)):
         
         if not candidate:
             raise HTTPException(status_code=404, detail="Candidate not found")
+        
+        # Delete CV file from disk if it exists
+        if candidate.cv_file_path:
+            file_path = f"/app{candidate.cv_file_path}"
+            try:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    print(f"Deleted CV file: {file_path}")
+                else:
+                    print(f"CV file not found on disk: {file_path}")
+            except Exception as file_error:
+                print(f"Error deleting CV file {file_path}: {file_error}")
+                # Continue with soft delete even if file deletion fails
         
         # Soft delete
         candidate.is_active = False
@@ -490,6 +516,48 @@ async def download_candidate_cv(candidate_id: int, db: Session = Depends(get_db)
         raise
     except Exception as e:
         print(f"Error downloading CV for candidate {candidate_id}: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@router.delete("/{candidate_id}/cv")
+async def delete_candidate_cv(candidate_id: int, db: Session = Depends(get_db)):
+    """Delete candidate CV file"""
+    try:
+        candidate = db.query(Candidate).filter(
+            and_(Candidate.id == candidate_id, Candidate.is_active == True)
+        ).first()
+        
+        if not candidate:
+            raise HTTPException(status_code=404, detail="Candidate not found")
+        
+        if not candidate.cv_file_path:
+            raise HTTPException(status_code=404, detail="CV file not found")
+        
+        # Delete CV file from disk
+        file_path = f"/app{candidate.cv_file_path}"
+        try:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                print(f"Deleted CV file: {file_path}")
+            else:
+                print(f"CV file not found on disk: {file_path}")
+        except Exception as file_error:
+            print(f"Error deleting CV file {file_path}: {file_error}")
+            # Continue with database update even if file deletion fails
+        
+        # Remove CV file path from database
+        candidate.cv_file_path = None
+        candidate.updated_at = datetime.utcnow()
+        
+        db.commit()
+        db.refresh(candidate)
+        
+        return {"message": "CV file deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error deleting CV for candidate {candidate_id}: {e}")
+        db.rollback()
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/{candidate_id}/cv/view")
