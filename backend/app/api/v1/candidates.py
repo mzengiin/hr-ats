@@ -134,6 +134,47 @@ async def get_candidates(
         print(f"Error getting candidates: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
+@router.get("/search")
+async def search_candidates(
+    q: str,
+    limit: int = 20,
+    db: Session = Depends(get_db)
+):
+    """Search candidates by name, email, position, or phone"""
+    try:
+        if not q or len(q.strip()) < 2:
+            return {"candidates": [], "total": 0}
+        
+        search_term = f"%{q.strip()}%"
+        
+        # Search in multiple fields
+        query = db.query(Candidate).filter(
+            and_(
+                Candidate.is_active == True,
+                or_(
+                    Candidate.first_name.ilike(search_term),
+                    Candidate.last_name.ilike(search_term),
+                    Candidate.email.ilike(search_term),
+                    Candidate.position.ilike(search_term),
+                    Candidate.phone.ilike(search_term)
+                )
+            )
+        ).limit(limit)
+        
+        candidates = query.all()
+        
+        # Convert to response format
+        candidate_responses = [candidate_to_response(c) for c in candidates]
+        
+        return {
+            "candidates": candidate_responses,
+            "total": len(candidate_responses)
+        }
+        
+    except Exception as e:
+        print(f"Error searching candidates: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
 @router.get("/candidates-options")
 async def get_candidate_options(db: Session = Depends(get_db)):
     """Get options for candidate form dropdowns from database"""

@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-const Sidebar = () => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+const Sidebar = ({ isCollapsed, onToggle }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -17,10 +16,6 @@ const Sidebar = () => {
 
   const handleMenuClick = (path) => {
     navigate(path);
-  };
-
-  const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
   };
 
   return (
@@ -68,7 +63,7 @@ const Sidebar = () => {
         className={`flex items-center justify-center gap-3 w-full h-10 px-4 rounded-md text-gray-600 hover:bg-gray-100 hover:text-gray-900 ${
           isCollapsed ? 'justify-center' : ''
         }`}
-        onClick={toggleSidebar}
+        onClick={onToggle}
       >
         <span className={`material-symbols-outlined transition-transform ${
           isCollapsed ? 'rotate-180' : ''

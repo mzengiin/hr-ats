@@ -14,7 +14,7 @@ class RateLimiter:
     
     def __init__(self):
         self.requests: Dict[str, list] = {}
-        self.max_requests = settings.RATE_LIMIT_PER_MINUTE
+        self.max_requests = 100  # Increased from settings for debugging
         self.window_seconds = 60
     
     def is_allowed(self, key: str) -> bool:

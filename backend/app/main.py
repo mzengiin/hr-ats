@@ -40,7 +40,7 @@ async def health_check():
 from app.models import *  # This will import all models
 
 # Include API routers
-from app.api.v1 import auth, users, files, roles, dashboard, candidates
+from app.api.v1 import auth, users, files, roles, dashboard, candidates, interviews
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(users.router, prefix="/api/v1/users", tags=["Users"])
@@ -48,4 +48,5 @@ app.include_router(files.router, prefix="/api/v1/files", tags=["Files"])
 app.include_router(roles.router, prefix="/api/v1/roles", tags=["Roles"])
 app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["Dashboard"])
 app.include_router(candidates.router, prefix="/api/v1/candidates", tags=["Candidates"])
+app.include_router(interviews.router, prefix="/api/v1/interviews", tags=["Interviews"])
 

@@ -7,6 +7,7 @@ import DashboardNew from './components/DashboardNew';
 import CandidateList from './components/CandidateList';
 import CandidateForm from './components/CandidateForm';
 import CandidateDetail from './components/CandidateDetail';
+import InterviewCalendar from './components/InterviewCalendar';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
@@ -24,7 +25,7 @@ function AppContent() {
   }
 
   return (
-    <Router>
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="App">
         <Routes>
           <Route 
@@ -47,7 +48,7 @@ function AppContent() {
             <Route path="candidates/new" element={<CandidateForm />} />
             <Route path="candidates/:id" element={<CandidateDetail />} />
             <Route path="candidates/:id/edit" element={<CandidateForm />} />
-            <Route path="interviews" element={<div className="p-8"><h1 className="text-2xl font-bold">Mülakat Takvimi</h1><p className="text-gray-600">Bu sayfa yakında eklenecek...</p></div>} />
+            <Route path="interviews" element={<InterviewCalendar />} />
             <Route path="case-studies" element={<div className="p-8"><h1 className="text-2xl font-bold">Vaka Çalışmaları</h1><p className="text-gray-600">Bu sayfa yakında eklenecek...</p></div>} />
             <Route path="users" element={<div className="p-8"><h1 className="text-2xl font-bold">Kullanıcı Yönetimi</h1><p className="text-gray-600">Bu sayfa yakında eklenecek...</p></div>} />
             <Route path="reports" element={<div className="p-8"><h1 className="text-2xl font-bold">Raporlar</h1><p className="text-gray-600">Bu sayfa yakında eklenecek...</p></div>} />

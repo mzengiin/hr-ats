@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
-const Header = () => {
+const Header = ({ onMenuClick }) => {
   const { user, logout } = useAuth();
 
   const handleLogout = () => {
@@ -11,7 +11,11 @@ const Header = () => {
   return (
     <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-gray-200 bg-white px-6 py-4 shadow-sm">
       <div className="flex items-center gap-4 text-slate-800">
-        <button className="p-2 rounded-md hover:bg-gray-100 transition-colors">
+        <button 
+          className="p-2 rounded-md hover:bg-gray-100 transition-colors"
+          onClick={onMenuClick}
+          aria-label="Toggle Menu"
+        >
           <span className="material-symbols-outlined text-gray-600">menu</span>
         </button>
       </div>

@@ -225,6 +225,59 @@ export const candidatesAPI = {
     api.get(`/candidates/${candidateId}/cv/view`, {
       responseType: 'blob'
     }),
+
+  // Search candidates
+  searchCandidates: (searchTerm, limit = 20) => 
+    api.get('/candidates/search', { 
+      params: { 
+        q: searchTerm, 
+        limit 
+      } 
+    }),
+};
+
+// Aday arama fonksiyonu (export edilmiş)
+export const searchCandidates = (searchTerm, limit = 20) => 
+  api.get('/candidates/search', { 
+    params: { 
+      q: searchTerm, 
+      limit 
+    } 
+  });
+
+export const interviewsAPI = {
+  // Get interviews list
+  getInterviews: (params = {}) => 
+    api.get('/interviews', { params }),
+
+  // Get calendar interviews
+  getCalendarInterviews: (startDate, endDate) => 
+    api.get('/interviews/calendar', { 
+      params: { 
+        start_date: startDate, 
+        end_date: endDate 
+      } 
+    }),
+
+  // Get interview by ID
+  getInterview: (id) => 
+    api.get(`/interviews/${id}`),
+
+  // Create interview
+  createInterview: (interviewData) => 
+    api.post('/interviews', interviewData),
+
+  // Update interview
+  updateInterview: (id, interviewData) => 
+    api.put(`/interviews/${id}`, interviewData),
+
+  // Delete interview
+  deleteInterview: (id) => 
+    api.delete(`/interviews/${id}`),
+
+  // Get candidate interviews
+  getCandidateInterviews: (candidateId) => 
+    api.get(`/interviews/candidate/${candidateId}`),
 };
 
 // Error handler

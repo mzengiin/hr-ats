@@ -64,7 +64,7 @@ const LoginForm = () => {
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (!validatePassword(formData.password)) {
-      newErrors.password = 'Password must be at least 8 characters long';
+      newErrors.password = 'Password must be at least 6 characters long';
     }
 
     setErrors(newErrors);
@@ -99,8 +99,8 @@ const LoginForm = () => {
   // Handle demo login
   const handleDemoLogin = () => {
     setFormData({
-      email: 'admin@cvflow.com',
-      password: 'admin123'
+      email: 'demo@example.com',
+      password: 'demo123'
     });
   };
 

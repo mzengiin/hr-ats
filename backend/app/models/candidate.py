@@ -40,6 +40,7 @@ class Candidate(Base):
     application_channel_rel = relationship("ApplicationChannel", backref="candidates")
     status_rel = relationship("CandidateStatus", backref="candidates")
     hr_specialist_rel = relationship("User", backref="candidates")
+    interviews = relationship("Interview", back_populates="candidate")
     
     # Constraints
     __table_args__ = (
@@ -51,7 +52,7 @@ class Candidate(Base):
         CheckConstraint('LENGTH(application_channel) > 0', name='chk_application_channel_not_empty'),
         CheckConstraint('LENGTH(hr_specialist) > 0', name='chk_hr_specialist_not_empty'),
         CheckConstraint('LENGTH(status) > 0', name='chk_status_not_empty'),
-        CheckConstraint("status IN ('Başvurdu', 'İnceleme', 'Mülakat', 'Teklif', 'İşe Alındı', 'Reddedildi')", name='chk_status_valid'),
+        CheckConstraint("status IN ('Başvurdu', 'İnceleme', 'Mülakat', 'Teklif', 'İşe Alındı', 'Reddedildi', 'Aktif')", name='chk_status_valid'),
         CheckConstraint("application_channel IN ('LinkedIn', 'Kariyer.net', 'Referanslı', 'İş Görüşmesi', 'Diğer')", name='chk_application_channel_valid'),
     )
     

@@ -10,3 +10,4 @@ from .candidate import Candidate
 from .position import Position
 from .application_channel import ApplicationChannel
 from .candidate_status import CandidateStatus
+from .interview import Interview
