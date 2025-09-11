@@ -1,393 +1,448 @@
-/**
- * User Form Component for creating and editing users
- */
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import api, { usersAPI, handleAPIError } from '../services/api';
-import RoleSelector from './RoleSelector';
-import { validateEmail, validatePassword, validateRequired } from '../utils/validation';
-import './UserForm.css';
+import api from '../services/api';
 
-const UserForm = ({ mode = 'create', user = null, onSuccess, onCancel }) => {
-  const { user: currentUser } = useAuth();
+const UserForm = ({ isOpen, onClose, userId, onSuccess }) => {
+  const isEdit = Boolean(userId);
+  const formKey = isEdit ? `edit-${userId}` : 'new';
+
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
     email: '',
+    phone: '',
     password: '',
-    confirm_password: '',
     role_id: '',
-    is_active: true
+    is_active: true,
+    profile_photo: null
   });
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [availableRoles, setAvailableRoles] = useState([]);
 
-  // Available roles
-  // Available roles - will be loaded from API
+
   const [roles, setRoles] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
 
-  // Load roles from API
+  // Reset form function
+  const resetForm = () => {
+    setFormData({
+      first_name: '',
+      last_name: '',
+      email: '',
+      phone: '',
+      password: '',
+      role_id: '',
+      is_active: true,
+      profile_photo: null
+    });
+    setPreviewImage(null);
+    setError(null);
+  };
+
   useEffect(() => {
-    const loadRoles = async () => {
-      console.log('Loading roles from API...');
-      try {
-        const response = await api.get('/roles/');
-        console.log('Roles API response:', response.data);
-        setRoles(response.data);
-        setAvailableRoles(response.data);
-      } catch (error) {
-        console.error('Error loading roles:', error);
-        // Fallback to hardcoded roles if API fails
-        const fallbackRoles = [
-          { id: '1486f8d4-ea3e-40c9-a754-80e9d8e088d8', name: 'hr_manager', description: 'HR Manager' },
-          { id: 'c2207ec4-b4a6-4895-9b59-ef0467602ea7', name: 'admin', description: 'Administrator role' }
-        ];
-        console.log('Using fallback roles:', fallbackRoles);
-        setRoles(fallbackRoles);
-        setAvailableRoles(fallbackRoles);
-      }
-    };
-    
-    loadRoles();
-  }, []);
-
-  // Initialize form data
-  useEffect(() => {
-    if (mode === 'edit' && user) {
-      setFormData({
-        first_name: user.first_name || '',
-        last_name: user.last_name || '',
-        email: user.email || '',
-        password: '',
-        confirm_password: '',
-        role_id: user.role?.id || '',
-        is_active: user.is_active !== undefined ? user.is_active : true
-      });
-    } else if (roles.length > 0) {
-      // Set default role for new users (first available role)
-      setFormData(prev => ({
-        ...prev,
-        role_id: roles[0].id
-      }));
-    }
-  }, [mode, user, roles]);
-
-  // Handle input change
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-
-    // Clear error for this field
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
-  };
-
-  // Handle role selection
-  const handleRoleChange = (roleId) => {
-    setFormData(prev => ({
-      ...prev,
-      role_id: roleId
-    }));
-
-    if (errors.role_id) {
-      setErrors(prev => ({
-        ...prev,
-        role_id: ''
-      }));
-    }
-  };
-
-  // Validate form
-  const validateForm = () => {
-    const newErrors = {};
-
-    // Validate first name
-    if (!validateRequired(formData.first_name)) {
-      newErrors.first_name = 'First name is required';
-    }
-
-    // Validate last name
-    if (!validateRequired(formData.last_name)) {
-      newErrors.last_name = 'Last name is required';
-    }
-
-    // Validate email
-    if (!validateRequired(formData.email)) {
-      newErrors.email = 'Email is required';
-    } else if (!validateEmail(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
-
-    // Validate password (only for create mode or if password is provided)
-    if (mode === 'create' || formData.password) {
-      if (!validateRequired(formData.password)) {
-        newErrors.password = 'Password is required';
-      } else if (!validatePassword(formData.password)) {
-        newErrors.password = 'Password must be at least 8 characters long';
-      }
-
-      // Validate password confirmation
-      if (formData.password !== formData.confirm_password) {
-        newErrors.confirm_password = 'Passwords do not match';
-      }
-    }
-
-    // Validate role
-    if (!validateRequired(formData.role_id)) {
-      newErrors.role_id = 'Please select a role';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    console.log('Form data being submitted:', formData);
-    console.log('Available roles:', roles);
-    
-    if (!validateForm()) {
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const userData = {
-        first_name: formData.first_name,
-        last_name: formData.last_name,
-        email: formData.email,
-        role_id: formData.role_id,
-        is_active: formData.is_active
-      };
-
-      // Only include password if provided
-      if (formData.password) {
-        userData.password = formData.password;
-      }
-
-      if (mode === 'create') {
-        await usersAPI.createUser(userData);
+    if (isOpen) {
+      fetchRoles();
+      if (isEdit && userId) {
+        fetchUser();
       } else {
-        await usersAPI.updateUser(user.id, userData);
+        // Reset form for new user
+        resetForm();
       }
+    } else {
+      // Reset form when modal is closed
+      resetForm();
+    }
+  }, [isOpen, userId, isEdit]);
 
-      if (onSuccess) {
-        onSuccess();
+  const fetchRoles = async () => {
+    try {
+      const response = await api.get('/roles');
+      if (response.data.success) {
+        setRoles(response.data.data.roles || []);
       }
     } catch (error) {
-      const errorMessage = handleAPIError(error);
-      setErrors({ submit: errorMessage });
+      console.error('Error fetching roles:', error);
+    }
+  };
+
+  const fetchUser = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get(`/users/${userId}`);
+      
+      if (response.data.success) {
+        const user = response.data.data;
+      setFormData({
+          first_name: user.first_name,
+          last_name: user.last_name,
+          email: user.email,
+          phone: user.phone || '',
+          password: '', // Don't pre-fill password
+          role_id: user.role_id || '',
+          is_active: user.is_active,
+          profile_photo: null
+        });
+        setPreviewImage(user.profile_photo ? `http://localhost:8001${user.profile_photo}` : null);
+      } else {
+        setError('Kullanıcı bilgileri yüklenirken hata oluştu');
+      }
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      setError('Kullanıcı bilgileri yüklenirken hata oluştu');
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle cancel
-  const handleCancel = () => {
-    if (onCancel) {
-      onCancel();
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    
+    // Telefon numarası mask'ı
+    if (name === 'phone') {
+      let maskedValue = value.replace(/\D/g, ''); // Sadece rakamları al
+      if (maskedValue.length > 0) {
+        if (maskedValue.length <= 3) {
+          maskedValue = maskedValue;
+        } else if (maskedValue.length <= 6) {
+          maskedValue = maskedValue.slice(0, 3) + ' ' + maskedValue.slice(3);
+        } else if (maskedValue.length <= 8) {
+          maskedValue = maskedValue.slice(0, 3) + ' ' + maskedValue.slice(3, 6) + ' ' + maskedValue.slice(6);
+        } else if (maskedValue.length <= 10) {
+          maskedValue = maskedValue.slice(0, 3) + ' ' + maskedValue.slice(3, 6) + ' ' + maskedValue.slice(6, 8) + ' ' + maskedValue.slice(8);
+        } else {
+          maskedValue = maskedValue.slice(0, 3) + ' ' + maskedValue.slice(3, 6) + ' ' + maskedValue.slice(6, 8) + ' ' + maskedValue.slice(8, 10);
+        }
+      }
+      
+    setFormData(prev => ({
+        ...prev,
+        [name]: maskedValue
+      }));
+    } else {
+    setFormData(prev => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value
+      }));
     }
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError('Lütfen geçerli bir resim dosyası seçin');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Resim dosyası 5MB\'dan küçük olmalıdır');
+        return;
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        profile_photo: file
+      }));
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPreviewImage(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Create FormData for file upload
+      const submitData = new FormData();
+      submitData.append('first_name', formData.first_name);
+      submitData.append('last_name', formData.last_name);
+      submitData.append('email', formData.email);
+      submitData.append('phone', formData.phone);
+      submitData.append('role_id', formData.role_id);
+      submitData.append('is_active', formData.is_active);
+      
+      if (formData.password) {
+        submitData.append('password', formData.password);
+      }
+      
+      if (formData.profile_photo) {
+        submitData.append('profile_photo', formData.profile_photo);
+      }
+
+      const response = isEdit 
+        ? await api.put(`/users/${userId}`, submitData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          })
+        : await api.post('/users', submitData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+
+      if (response.data.success) {
+        onSuccess && onSuccess();
+        resetForm();
+        onClose();
+      } else {
+        setError(response.data.message || 'Kullanıcı kaydedilirken hata oluştu');
+      }
+    } catch (error) {
+      console.error('Error saving user:', error);
+      console.error('Error response:', error.response?.data);
+      const errorMessage = error.response?.data?.detail || error.response?.data?.message || 'Kullanıcı kaydedilirken hata oluştu';
+      setError(typeof errorMessage === 'string' ? errorMessage : 'Kullanıcı kaydedilirken hata oluştu');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  if (loading && isEdit) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#137fec]"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="user-form-container">
-      <div className="user-form-header">
-        <h2>{mode === 'create' ? 'Yeni Kullanıcı Oluştur' : 'Kullanıcıyı Düzenle'}</h2>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div key={isOpen ? 'modal-open' : 'modal-closed'} className="bg-white rounded-xl max-w-4xl w-full max-h-[85vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              {isEdit ? 'Kullanıcı Düzenle' : 'Yeni Kullanıcı Ekle'}
+            </h2>
+            <p className="text-gray-600 mt-1">
+              {isEdit ? 'Kullanıcı bilgilerini düzenleyin' : 'Yeni bir kullanıcı oluşturun'}
+            </p>
+          </div>
         <button
-          type="button"
-          className="close-button"
-          onClick={handleCancel}
-        >
-          ✕
+            onClick={() => {
+              resetForm();
+              onClose();
+            }}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <span className="material-symbols-outlined text-gray-600">close</span>
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="user-form">
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="first_name" className="form-label">
+        <div className="p-6 overflow-y-auto flex-1">
+          <form key={formKey} onSubmit={handleSubmit} autoComplete="new-password" className="space-y-4">
+            {/* Profile Photo */}
+            <div className="bg-gray-50 p-4 rounded-xl">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Profil Fotoğrafı</h3>
+              <div className="flex justify-center">
+                <div className="relative">
+                  <div className="h-24 w-24 flex-shrink-0">
+                    {previewImage ? (
+                      <img
+                        className="h-24 w-24 rounded-full object-cover"
+                        src={previewImage}
+                        alt="Profil önizleme"
+                      />
+                    ) : (
+                      <div className="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center">
+                        <span className="material-symbols-outlined text-gray-500 text-3xl">person</span>
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => document.getElementById('profile-photo-input').click()}
+                    className="absolute -bottom-1 -right-1 h-8 w-8 bg-[#137fec] text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-sm">edit</span>
+                  </button>
+                  <input
+                    id="profile-photo-input"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 text-center mt-2">JPG, PNG veya GIF. Maksimum 5MB.</p>
+            </div>
+
+            {/* Basic Information */}
+            <div className="bg-gray-50 p-4 rounded-xl">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Temel Bilgiler</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
               Ad *
             </label>
             <input
               type="text"
-              id="first_name"
               name="first_name"
               value={formData.first_name}
-              onChange={handleChange}
-              className={`form-input ${errors.first_name ? 'error' : ''}`}
-              placeholder="Adı girin"
-              disabled={loading}
-            />
-            {errors.first_name && (
-              <span className="error-message">{errors.first_name}</span>
-            )}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#137fec] focus:border-transparent"
+                    placeholder="Ad"
+                  />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="last_name" className="form-label">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
               Soyad *
             </label>
             <input
               type="text"
-              id="last_name"
               name="last_name"
               value={formData.last_name}
-              onChange={handleChange}
-              className={`form-input ${errors.last_name ? 'error' : ''}`}
-              placeholder="Soyadı girin"
-              disabled={loading}
-            />
-            {errors.last_name && (
-              <span className="error-message">{errors.last_name}</span>
-            )}
-          </div>
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#137fec] focus:border-transparent"
+                    placeholder="Soyad"
+                  />
         </div>
 
-        <div className="form-group">
-          <label htmlFor="email" className="form-label">
-            Email Address *
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    E-posta *
           </label>
           <input
+                    key={`email-${isEdit ? userId : 'new'}`}
             type="email"
-            id="email"
             name="email"
             value={formData.email}
-            onChange={handleChange}
-            className={`form-input ${errors.email ? 'error' : ''}`}
-            placeholder="Enter email address"
-            disabled={loading || mode === 'edit'}
-          />
-          {mode === 'edit' && (
-            <small className="form-help">Email cannot be changed</small>
-          )}
-          {errors.email && (
-            <span className="error-message">{errors.email}</span>
-          )}
+                    onChange={handleInputChange}
+                    required
+                    autoComplete="new-email"
+                    className="w-full px-3 py-2 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#137fec] focus:border-transparent"
+                    placeholder="ornek@email.com"
+                  />
         </div>
 
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="password" className="form-label">
-              Password {mode === 'create' ? '*' : '(leave blank to keep current)'}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Telefon
             </label>
             <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className={`form-input ${errors.password ? 'error' : ''}`}
-              placeholder={mode === 'create' ? 'Enter password' : 'Enter new password'}
-              disabled={loading}
-            />
-            {errors.password && (
-              <span className="error-message">{errors.password}</span>
-            )}
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    maxLength="13"
+                    className="w-full px-3 py-2 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#137fec] focus:border-transparent"
+                    placeholder="555 000 00 00"
+                  />
           </div>
 
-          {mode === 'create' && (
-            <div className="form-group">
-              <label htmlFor="confirm_password" className="form-label">
-                Confirm Password *
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Şifre {!isEdit && '*'}
               </label>
               <input
+                    key={`password-${isEdit ? userId : 'new'}`}
                 type="password"
-                id="confirm_password"
-                name="confirm_password"
-                value={formData.confirm_password}
-                onChange={handleChange}
-                className={`form-input ${errors.confirm_password ? 'error' : ''}`}
-                placeholder="Confirm password"
-                disabled={loading}
-              />
-              {errors.confirm_password && (
-                <span className="error-message">{errors.confirm_password}</span>
-              )}
-            </div>
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    required={!isEdit}
+                    autoComplete="new-password"
+                    className="w-full px-3 py-2 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#137fec] focus:border-transparent"
+                    placeholder={isEdit ? "Değiştirmek için yeni şifre girin" : "Şifre"}
+                  />
+                  {isEdit && (
+                    <p className="text-xs text-gray-500 mt-1">Boş bırakırsanız şifre değişmez</p>
           )}
         </div>
 
-        <div className="form-group">
-          <label className="form-label">
-            Role *
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Rol *
           </label>
-          <RoleSelector
-            roles={availableRoles}
+                  <select
+                    name="role_id"
             value={formData.role_id}
-            onChange={handleRoleChange}
-            disabled={loading}
-          />
-          {errors.role_id && (
-            <span className="error-message">{errors.role_id}</span>
-          )}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#137fec] focus:border-transparent"
+                  >
+                    <option value="">Rol Seçin</option>
+                    {roles.map((role) => (
+                      <option key={role.id} value={role.id}>
+                        {role.name}
+                      </option>
+                    ))}
+                  </select>
         </div>
 
-        <div className="form-group">
-          <label className="checkbox-container">
+                <div className="md:col-span-2">
+                  <div className="flex items-center">
             <input
               type="checkbox"
               name="is_active"
               checked={formData.is_active}
-              onChange={handleChange}
-              disabled={loading}
+                      onChange={handleInputChange}
+                      className="h-4 w-4 text-[#137fec] focus:ring-[#137fec] border-gray-300 rounded"
             />
-            <span className="checkmark"></span>
-            Active User
+                    <label className="ml-2 block text-sm text-gray-700">
+                      Aktif
           </label>
-          <small className="form-help">
-            Inactive users cannot log in to the system
-          </small>
+                  </div>
+                </div>
+              </div>
         </div>
 
-        {/* Submit Error */}
-        {errors.submit && (
-          <div className="error-banner">
-            <span className="error-icon">⚠️</span>
-            {errors.submit}
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex">
+                  <span className="material-symbols-outlined text-red-400 mr-2">error</span>
+                  <p className="text-sm text-red-700">
+                    {typeof error === 'string' ? error : JSON.stringify(error)}
+                  </p>
+                </div>
           </div>
         )}
 
-        {/* Form Actions */}
-        <div className="form-actions">
+            {/* Actions */}
+            <div className="flex justify-end gap-4 pt-4 border-t border-gray-200">
           <button
             type="button"
-            className="cancel-button"
-            onClick={handleCancel}
-            disabled={loading}
-          >
-            Cancel
+                onClick={() => {
+                  resetForm();
+                  onClose();
+                }}
+                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                İptal
           </button>
           <button
             type="submit"
-            className={`submit-button ${loading ? 'loading' : ''}`}
             disabled={loading}
-          >
-            {loading ? (
-              <>
-                <span className="spinner"></span>
-                {mode === 'create' ? 'Creating...' : 'Updating...'}
-              </>
-            ) : (
-              mode === 'create' ? 'Create User' : 'Update User'
-            )}
+                className="px-6 py-2 bg-[#137fec] text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {loading && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                )}
+                {isEdit ? 'Güncelle' : 'Oluştur'}
           </button>
         </div>
       </form>
+        </div>
+      </div>
     </div>
   );
 };
 
 export default UserForm;
-
-

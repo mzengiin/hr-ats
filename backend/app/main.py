@@ -3,6 +3,7 @@ Main FastAPI application
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 
 app = FastAPI(
@@ -35,6 +36,9 @@ async def health_check():
     return {"status": "healthy", "message": "API is working correctly"}
 
 # CORS middleware otomatik olarak OPTIONS request'leri hallediyor
+
+# Mount static files
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # Import models to ensure they are registered
 from app.models import *  # This will import all models

@@ -1,381 +1,407 @@
 """
 User management API endpoints
 """
-from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Request, Form
+from fastapi.exceptions import RequestValidationError
 from sqlalchemy.orm import Session
-import uuid
-
+from sqlalchemy import func, and_, or_
 from app.db.session import get_db
-from app.schemas.user import (
-    UserCreate, UserUpdate, UserResponse, UserListResponse,
-    UserWithRoleResponse, PasswordChange, UserFilter
-)
-from app.services.user_service import UserService
-from app.core.auth import get_current_active_user, require_permission
+from app.core.auth import get_current_user
 from app.models.user import User
+from app.models.role import Role
+from pydantic import BaseModel
+from typing import List, Optional
+from uuid import UUID
+import os
+import shutil
+from passlib.context import CryptContext
 
 router = APIRouter()
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-@router.get("/", response_model=UserListResponse)
-def get_users(
+class UserCreate(BaseModel):
+    first_name: str
+    last_name: str
+    email: str
+    phone: Optional[str] = None
+    password: str
+    role_id: UUID
+    is_active: bool = True
+
+
+class UserUpdate(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    password: Optional[str] = None
+    role_id: Optional[UUID] = None
+    is_active: Optional[bool] = None
+
+
+class UserResponse(BaseModel):
+    id: UUID
+    first_name: str
+    last_name: str
+    email: str
+    phone: Optional[str]
+    role_id: Optional[UUID]
+    is_active: bool
+    last_login: Optional[str]
+    profile_photo: Optional[str]
+    role: Optional[dict]
+    created_at: str
+    updated_at: str
+
+    class Config:
+        from_attributes = True
+
+
+@router.get("/", response_model=dict)
+async def get_users(
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(10, ge=1, le=100, description="Items per page"),
     search: Optional[str] = Query(None, description="Search term"),
-    sort_by: str = Query("created_at", description="Sort field"),
-    sort_order: str = Query("desc", description="Sort order (asc/desc)"),
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_permission("users:read"))
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     """
-    Get list of users with pagination and filtering
-    
-    Requires 'users:read' permission
+    Get all users with pagination and search
     """
-    user_service = UserService(db)
-    
-    # Validate sort fields
-    allowed_sort_fields = ["created_at", "updated_at", "first_name", "last_name", "email"]
-    if sort_by not in allowed_sort_fields:
-        sort_by = "created_at"
-    
-    if sort_order not in ["asc", "desc"]:
-        sort_order = "desc"
-    
-    # Create filter object
-    filters = UserFilter(search=search)
-    
-    # Calculate skip for pagination
-    skip = (page - 1) * limit
-    
-    # Get users with pagination
-    result = user_service.list_users(
-        skip=skip,
-        limit=limit,
-        filters=filters
-    )
-    
-    return UserListResponse(
-        users=result["users"],
-        total=result["total"],
-        page=result["page"],
-        pages=result["pages"],
-        limit=result["limit"]
-    )
+    try:
+        # Build query
+        query = db.query(User)
+        
+        # Apply search filter
+        if search:
+            query = query.filter(
+                or_(
+                    User.first_name.ilike(f"%{search}%"),
+                    User.last_name.ilike(f"%{search}%"),
+                    User.email.ilike(f"%{search}%"),
+                    User.phone.ilike(f"%{search}%")
+                )
+            )
+        
+        # Get total count
+        total = query.count()
+        
+        # Apply pagination
+        offset = (page - 1) * limit
+        users = query.offset(offset).limit(limit).all()
+        
+        # Format response
+        user_list = []
+        for user in users:
+            user_data = {
+                "id": user.id,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "email": user.email,
+                "phone": user.phone,
+                "role_id": user.role_id,
+                "is_active": user.is_active,
+                "last_login": user.last_login.isoformat() if user.last_login else None,
+                "profile_photo": user.profile_photo,
+                "created_at": user.created_at.isoformat(),
+                "updated_at": user.updated_at.isoformat()
+            }
+            
+            # Add role information
+            if user.role:
+                user_data["role"] = {
+                    "id": user.role.id,
+                    "name": user.role.name,
+                    "code": user.role.code
+                }
+            
+            user_list.append(user_data)
+        
+        total_pages = (total + limit - 1) // limit
+        
+        return {
+            "success": True,
+            "data": {
+                "users": user_list,
+                "total": total,
+                "page": page,
+                "limit": limit,
+                "total_pages": total_pages
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def create_user(
-    user_data: UserCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_permission("users:create"))
+@router.get("/{user_id}", response_model=dict)
+async def get_user(
+    user_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get a specific user by ID
+    """
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        user_data = {
+            "id": user.id,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "email": user.email,
+            "phone": user.phone,
+            "role_id": user.role_id,
+            "is_active": user.is_active,
+            "last_login": user.last_login.isoformat() if user.last_login else None,
+            "profile_photo": user.profile_photo,
+            "created_at": user.created_at.isoformat(),
+            "updated_at": user.updated_at.isoformat()
+        }
+        
+        # Add role information
+        if user.role:
+            user_data["role"] = {
+                "id": user.role.id,
+                "name": user.role.name,
+                "code": user.role.code
+            }
+        
+        return {
+            "success": True,
+            "data": user_data
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/", response_model=dict)
+async def create_user(
+    first_name: str = Form(...),
+    last_name: str = Form(...),
+    email: str = Form(...),
+    phone: Optional[str] = Form(None),
+    password: Optional[str] = Form(None),
+    role_id: Optional[UUID] = Form(None),
+    is_active: bool = Form(True),
+    profile_photo: Optional[UploadFile] = File(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     """
     Create a new user
-    
-    Requires 'users:create' permission
     """
     try:
-        user_service = UserService(db)
-        user = user_service.create_user(user_data, created_by=current_user.id)
-        return user
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
-
-
-@router.get("/list", response_model=UserListResponse)
-def list_users(
-    page: int = Query(1, ge=1, description="Page number"),
-    limit: int = Query(10, ge=1, le=100, description="Items per page"),
-    role_id: Optional[uuid.UUID] = Query(None, description="Filter by role ID"),
-    is_active: Optional[bool] = Query(None, description="Filter by active status"),
-    search: Optional[str] = Query(None, description="Search by name or email"),
-    created_after: Optional[str] = Query(None, description="Filter by creation date (ISO format)"),
-    created_before: Optional[str] = Query(None, description="Filter by creation date (ISO format)"),
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_permission("users:read"))
-):
-    """
-    List users with pagination and filtering
-    
-    Requires 'users:read' permission
-    """
-    try:
-        from datetime import datetime
+        print(f"Received form data: first_name={first_name}, last_name={last_name}, email={email}, password={'***' if password else 'None'}, role_id={role_id}")
         
-        # Parse date filters
-        created_after_dt = None
-        created_before_dt = None
+        # Validate required fields
+        if not password:
+            raise HTTPException(
+                status_code=422, 
+                detail="Password is required"
+            )
         
-        if created_after:
-            try:
-                created_after_dt = datetime.fromisoformat(created_after.replace('Z', '+00:00'))
-            except ValueError:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Invalid created_after date format. Use ISO format."
-                )
+        # Check if user with same email already exists
+        existing_user = db.query(User).filter(User.email == email).first()
         
-        if created_before:
-            try:
-                created_before_dt = datetime.fromisoformat(created_before.replace('Z', '+00:00'))
-            except ValueError:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Invalid created_before date format. Use ISO format."
-                )
+        if existing_user:
+            raise HTTPException(
+                status_code=400, 
+                detail="User with this email already exists"
+            )
         
-        # Create filters
-        filters = UserFilter(
+        # Validate role exists
+        if role_id:
+            role = db.query(Role).filter(Role.id == role_id).first()
+            if not role:
+                raise HTTPException(status_code=400, detail="Invalid role ID")
+        
+        # Handle profile photo upload
+        profile_photo_url = None
+        if profile_photo:
+            # Create uploads directory if it doesn't exist
+            upload_dir = "uploads/profile_photos"
+            os.makedirs(upload_dir, exist_ok=True)
+            
+            # Generate unique filename
+            file_extension = profile_photo.filename.split('.')[-1] if '.' in profile_photo.filename else 'jpg'
+            filename = f"{email}_{profile_photo.filename}"
+            file_path = os.path.join(upload_dir, filename)
+            
+            # Save file
+            with open(file_path, "wb") as buffer:
+                shutil.copyfileobj(profile_photo.file, buffer)
+            
+            profile_photo_url = f"/uploads/profile_photos/{filename}"
+        
+        # Create user
+        user = User(
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            phone=phone,
+            password_hash=pwd_context.hash(password) if password else None,
             role_id=role_id,
             is_active=is_active,
-            search=search,
-            created_after=created_after_dt,
-            created_before=created_before_dt
+            profile_photo=profile_photo_url,
+            created_by=current_user.id
         )
         
-        user_service = UserService(db)
-        skip = (page - 1) * limit
-        result = user_service.list_users(skip=skip, limit=limit, filters=filters)
+        db.add(user)
+        db.commit()
         
-        return UserListResponse(
-            users=result["users"],
-            total=result["total"],
-            page=result["page"],
-            pages=result["pages"],
-            limit=result["limit"]
-        )
+        return {
+            "success": True,
+            "message": "User created successfully",
+            "data": {
+                "id": user.id,
+                "email": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name
+            }
+        }
+    except HTTPException as e:
+        print(f"HTTPException: {e.detail}")
+        raise e
+    except RequestValidationError as e:
+        print(f"Validation error: {e.errors()}")
+        raise HTTPException(status_code=422, detail=f"Validation error: {e.errors()}")
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error listing users: {str(e)}"
-        )
+        db.rollback()
+        print(f"Error creating user: {str(e)}")
+        print(f"User data: first_name={first_name}, last_name={last_name}, email={email}, role_id={role_id}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/{user_id}", response_model=UserWithRoleResponse)
-def get_user(
-    user_id: uuid.UUID,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_permission("users:read"))
+@router.put("/{user_id}", response_model=dict)
+async def update_user(
+    user_id: UUID,
+    first_name: Optional[str] = Form(None),
+    last_name: Optional[str] = Form(None),
+    email: Optional[str] = Form(None),
+    phone: Optional[str] = Form(None),
+    password: Optional[str] = Form(None),
+    role_id: Optional[UUID] = Form(None),
+    is_active: Optional[bool] = Form(None),
+    profile_photo: Optional[UploadFile] = File(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     """
-    Get user by ID
-    
-    Requires 'users:read' permission
-    """
-    user_service = UserService(db)
-    user = user_service.get_user_by_id(user_id)
-    
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-    
-    return user
-
-
-@router.put("/{user_id}", response_model=UserResponse)
-def update_user(
-    user_id: uuid.UUID,
-    user_data: UserUpdate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_permission("users:update"))
-):
-    """
-    Update user
-    
-    Requires 'users:update' permission
+    Update a user
     """
     try:
-        user_service = UserService(db)
-        user = user_service.update_user(user_id, user_data, updated_by=current_user.id)
+        print(f"Updating user {user_id}: first_name={first_name}, last_name={last_name}, email={email}, role_id={role_id}")
+        
+        user = db.query(User).filter(User.id == user_id).first()
         
         if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found"
-            )
+            raise HTTPException(status_code=404, detail="User not found")
         
-        return user
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        # Check if email is being changed and if new email already exists
+        if email and email != user.email:
+            existing_user = db.query(User).filter(
+                and_(User.email == email, User.id != user_id)
+            ).first()
+            
+            if existing_user:
+                raise HTTPException(
+                    status_code=400, 
+                    detail="User with this email already exists"
+                )
+        
+        # Validate role exists
+        if role_id:
+            role = db.query(Role).filter(Role.id == role_id).first()
+            if not role:
+                raise HTTPException(status_code=400, detail="Invalid role ID")
+        
+        # Handle profile photo upload
+        if profile_photo:
+            # Create uploads directory if it doesn't exist
+            upload_dir = "uploads/profile_photos"
+            os.makedirs(upload_dir, exist_ok=True)
+            
+            # Generate unique filename
+            file_extension = profile_photo.filename.split('.')[-1] if '.' in profile_photo.filename else 'jpg'
+            filename = f"{user.email}_{profile_photo.filename}"
+            file_path = os.path.join(upload_dir, filename)
+            
+            # Save file
+            with open(file_path, "wb") as buffer:
+                shutil.copyfileobj(profile_photo.file, buffer)
+            
+            user.profile_photo = f"/uploads/profile_photos/{filename}"
+        
+        # Update user fields
+        if first_name is not None:
+            user.first_name = first_name
+        if last_name is not None:
+            user.last_name = last_name
+        if email is not None:
+            user.email = email
+        if phone is not None:
+            user.phone = phone
+        if password is not None:
+            user.password_hash = pwd_context.hash(password)
+        if role_id is not None:
+            user.role_id = role_id
+        if is_active is not None:
+            user.is_active = is_active
+        
+        user.updated_by = current_user.id
+        
+        db.commit()
+        
+        return {
+            "success": True,
+            "message": "User updated successfully"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.patch("/{user_id}/deactivate", response_model=UserResponse)
-def deactivate_user(
-    user_id: uuid.UUID,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_permission("users:update"))
+@router.delete("/{user_id}", response_model=dict)
+async def delete_user(
+    user_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     """
-    Deactivate user
-    
-    Requires 'users:update' permission
+    Delete a user
     """
     try:
-        user_service = UserService(db)
-        user = user_service.deactivate_user(user_id, deactivated_by=current_user.id)
+        user = db.query(User).filter(User.id == user_id).first()
         
         if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Check if user is trying to delete themselves
+        if user.id == current_user.id:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found"
+                status_code=400, 
+                detail="You cannot delete your own account"
             )
         
-        return user
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
-
-
-@router.patch("/{user_id}/activate", response_model=UserResponse)
-def activate_user(
-    user_id: uuid.UUID,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_permission("users:update"))
-):
-    """
-    Activate user
-    
-    Requires 'users:update' permission
-    """
-    try:
-        user_service = UserService(db)
-        user = user_service.activate_user(user_id, activated_by=current_user.id)
+        # Delete user
+        db.delete(user)
+        db.commit()
         
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found"
-            )
-        
-        return user
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
-
-
-@router.post("/{user_id}/change-password", status_code=status.HTTP_200_OK)
-def change_password(
-    user_id: uuid.UUID,
-    password_data: PasswordChange,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_permission("users:update"))
-):
-    """
-    Change user password
-    
-    Requires 'users:update' permission
-    """
-    try:
-        user_service = UserService(db)
-        success = user_service.change_password(
-            user_id,
-            password_data.current_password,
-            password_data.new_password,
-            changed_by=current_user.id
-        )
-        
-        if not success:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Failed to change password"
-            )
-        
-        return {"message": "Password changed successfully"}
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
-
-
-@router.get("/search/{search_term}", response_model=List[UserResponse])
-def search_users(
-    search_term: str,
-    limit: int = Query(10, ge=1, le=50, description="Maximum number of results"),
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_permission("users:read"))
-):
-    """
-    Search users by name or email
-    
-    Requires 'users:read' permission
-    """
-    user_service = UserService(db)
-    users = user_service.search_users(search_term, limit=limit)
-    return users
-
-
-@router.get("/stats/overview")
-def get_user_stats(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_permission("users:read"))
-):
-    """
-    Get user statistics
-    
-    Requires 'users:read' permission
-    """
-    user_service = UserService(db)
-    stats = user_service.get_user_stats()
-    return stats
-
-
-@router.get("/role/{role_id}", response_model=List[UserResponse])
-def get_users_by_role(
-    role_id: uuid.UUID,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_permission("users:read"))
-):
-    """
-    Get all users with a specific role
-    
-    Requires 'users:read' permission
-    """
-    user_service = UserService(db)
-    users = user_service.get_users_by_role(role_id)
-    return users
-
-
-@router.delete("/{user_id}", status_code=status.HTTP_200_OK)
-def delete_user(
-    user_id: uuid.UUID,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_permission("users:delete"))
-):
-    """
-    Delete user (soft delete)
-    
-    Requires 'users:delete' permission
-    """
-    try:
-        user_service = UserService(db)
-        success = user_service.delete_user(user_id, deleted_by=current_user.id)
-        
-        if not success:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found"
-            )
-        
-        return {"message": "User deleted successfully"}
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
-
-
+        return {
+            "success": True,
+            "message": "User deleted successfully"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))

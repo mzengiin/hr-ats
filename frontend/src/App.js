@@ -10,6 +10,7 @@ import CandidateDetail from './components/CandidateDetail';
 import InterviewCalendar from './components/InterviewCalendar';
 import CaseStudyList from './components/CaseStudyList';
 import RoleList from './components/RoleList';
+import UserList from './components/UserList';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
@@ -52,7 +53,7 @@ function AppContent() {
             <Route path="candidates/:id/edit" element={<CandidateForm />} />
             <Route path="interviews" element={<InterviewCalendar />} />
             <Route path="case-studies" element={<CaseStudyList />} />
-            <Route path="users" element={<div className="p-8"><h1 className="text-2xl font-bold">Kullanıcı Yönetimi</h1><p className="text-gray-600">Bu sayfa yakında eklenecek...</p></div>} />
+            <Route path="users" element={<UserList />} />
             <Route path="roles" element={<RoleList />} />
             <Route path="reports" element={<div className="p-8"><h1 className="text-2xl font-bold">Raporlar</h1><p className="text-gray-600">Bu sayfa yakında eklenecek...</p></div>} />
           </Route>

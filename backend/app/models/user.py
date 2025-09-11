@@ -20,6 +20,7 @@ class User(Base):
     last_name = Column(String(100), nullable=False)
     phone = Column(String(20), nullable=True)
     role_id = Column(UUID(as_uuid=True), ForeignKey("roles.id"), nullable=True)
+    profile_photo = Column(String(500), nullable=True)
     is_active = Column(Boolean, default=True, nullable=False, index=True)
     last_login = Column(DateTime(timezone=True))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
