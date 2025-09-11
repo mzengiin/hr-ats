@@ -13,3 +13,4 @@ from .candidate_status import CandidateStatus
 from .interview import Interview
 from .case_study import CaseStudy
 from .case_study_status import CaseStudyStatus
+from .role import Role, Permission, RolePermission

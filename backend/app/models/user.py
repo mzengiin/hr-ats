@@ -19,7 +19,7 @@ class User(Base):
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)
     phone = Column(String(20), nullable=True)
-    role_id = Column(UUID(as_uuid=True), ForeignKey("user_roles.id"), nullable=False)
+    role_id = Column(UUID(as_uuid=True), ForeignKey("roles.id"), nullable=True)
     is_active = Column(Boolean, default=True, nullable=False, index=True)
     last_login = Column(DateTime(timezone=True))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -28,7 +28,7 @@ class User(Base):
     updated_by = Column(UUID(as_uuid=True), ForeignKey("users.id"))
     
     # Relationships
-    role = relationship("UserRole", backref="users")
+    role = relationship("Role", back_populates="users")
     refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
     audit_logs = relationship("AuditLog", back_populates="user")
     

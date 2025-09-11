@@ -1,20 +1,43 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const Sidebar = ({ isCollapsed, onToggle }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [expandedMenus, setExpandedMenus] = useState([]);
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'dashboard', path: '/dashboard' },
     { id: 'candidates', label: 'Aday Yönetimi', icon: 'groups', path: '/candidates' },
     { id: 'interviews', label: 'Mülakat Takvimi', icon: 'calendar_month', path: '/interviews' },
     { id: 'case-studies', label: 'Vaka Çalışmaları', icon: 'work', path: '/case-studies' },
-    { id: 'users', label: 'Kullanıcı Yönetimi', icon: 'manage_accounts', path: '/users' },
+    { 
+      id: 'user-role-management', 
+      label: 'Kullanıcı/Rol Yönetimi', 
+      icon: 'manage_accounts', 
+      path: '/user-role-management',
+      subItems: [
+        { id: 'users', label: 'Kullanıcı Yönetimi', icon: 'person', path: '/users' },
+        { id: 'roles', label: 'Rol Yönetimi', icon: 'admin_panel_settings', path: '/roles' }
+      ]
+    },
     { id: 'reports', label: 'Raporlar', icon: 'monitoring', path: '/reports' },
   ];
 
-  const handleMenuClick = (path) => {
+  const handleMenuClick = (item) => {
+    if (item.subItems) {
+      // Toggle submenu
+      setExpandedMenus(prev => 
+        prev.includes(item.id) 
+          ? prev.filter(id => id !== item.id)
+          : [...prev, item.id]
+      );
+    } else {
+      navigate(item.path);
+    }
+  };
+
+  const handleSubMenuClick = (path) => {
     navigate(path);
   };
 
@@ -36,24 +59,58 @@ const Sidebar = ({ isCollapsed, onToggle }) => {
         
         <nav className="flex flex-col gap-2">
           {menuItems.map((item) => {
-            // Check if current path starts with the menu item path (for sub-routes)
+            const isExpanded = expandedMenus.includes(item.id);
             const isActive = location.pathname === item.path || 
-              (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
+              (item.subItems && item.subItems.some(subItem => location.pathname === subItem.path));
+            
             return (
-              <button
-                key={item.id}
-                onClick={() => handleMenuClick(item.path)}
-                className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
-                  isActive 
-                    ? 'bg-blue-50 text-[#137fec]' 
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                } ${isCollapsed ? 'justify-center' : ''}`}
-              >
-                <span className="material-symbols-outlined">{item.icon}</span>
-                {!isCollapsed && (
-                  <p className="text-sm font-medium">{item.label}</p>
+              <div key={item.id}>
+                <button
+                  onClick={() => handleMenuClick(item)}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors w-full ${
+                    isActive 
+                      ? 'bg-blue-50 text-[#137fec]' 
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  } ${isCollapsed ? 'justify-center' : ''}`}
+                >
+                  <span className="material-symbols-outlined">{item.icon}</span>
+                  {!isCollapsed && (
+                    <>
+                      <p className="text-sm font-medium flex-1 text-left">{item.label}</p>
+                      {item.subItems && (
+                        <span className={`material-symbols-outlined text-sm transition-transform ${
+                          isExpanded ? 'rotate-180' : ''
+                        }`}>
+                          expand_more
+                        </span>
+                      )}
+                    </>
+                  )}
+                </button>
+                
+                {/* Submenu */}
+                {item.subItems && isExpanded && !isCollapsed && (
+                  <div className="ml-4 mt-1 space-y-1">
+                    {item.subItems.map((subItem) => {
+                      const isSubActive = location.pathname === subItem.path;
+                      return (
+                        <button
+                          key={subItem.id}
+                          onClick={() => handleSubMenuClick(subItem.path)}
+                          className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors w-full text-sm ${
+                            isSubActive 
+                              ? 'bg-blue-50 text-[#137fec]' 
+                              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                          }`}
+                        >
+                          <span className="material-symbols-outlined text-base">{subItem.icon}</span>
+                          <p className="font-medium">{subItem.label}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
                 )}
-              </button>
+              </div>
             );
           })}
         </nav>
