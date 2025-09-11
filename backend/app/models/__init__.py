@@ -11,3 +11,5 @@ from .position import Position
 from .application_channel import ApplicationChannel
 from .candidate_status import CandidateStatus
 from .interview import Interview
+from .case_study import CaseStudy
+from .case_study_status import CaseStudyStatus
