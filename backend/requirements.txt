@@ -32,3 +32,6 @@ httpx==0.25.2
 black==23.11.0
 isort==5.12.0
 flake8==6.1.0
+
+# Mock data generation
+faker==37.6.0

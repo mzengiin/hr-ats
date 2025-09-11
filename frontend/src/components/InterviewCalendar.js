@@ -29,6 +29,7 @@ const InterviewCalendar = () => {
   const [editingInterview, setEditingInterview] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [interviewToDelete, setInterviewToDelete] = useState(null);
+  const [selectedAgendaSlot, setSelectedAgendaSlot] = useState(null);
 
   // Mülakat verilerini yükle
   const loadInterviews = useCallback(async () => {
@@ -100,6 +101,7 @@ const InterviewCalendar = () => {
     
     if (action === 'select') {
       // Mouse ile seçim yapıldığında seçimi kaydet
+      console.log('Select action on slot:', { start, end });
       setSelectedDate(start);
       setSelectedTimeRange({ start, end });
       setSelectedSlot({ start, end });
@@ -120,13 +122,45 @@ const InterviewCalendar = () => {
         setLastClickTime(0);
         setLastClickSlot(null);
       } else {
-        // Normal tıklama - sadece seçimi kaydet, modal açma
-        console.log('Normal click on slot, saving for potential double click');
+        // Normal tıklama - seçimi kaydet ve modal aç
+        console.log('Normal click on slot, opening modal');
         setLastClickTime(now);
         setLastClickSlot({ start, end });
+        setShowInterviewModal(true);
       }
+    } else if (action === 'click') {
+      // Tek tıklama - seçimi kaydet ve modal aç
+      console.log('Single click on slot:', { start, end });
+      setSelectedDate(start);
+      setSelectedTimeRange({ start, end });
+      setSelectedSlot({ start, end });
+      setShowInterviewModal(true);
+    } else if (action === 'doubleClick') {
+      // Çift tıklama - hemen modal aç
+      console.log('Double click on slot:', { start, end });
+      setSelectedDate(start);
+      setSelectedTimeRange({ start, end });
+      setSelectedSlot({ start, end });
+      setShowInterviewModal(true);
     }
   }, [lastClickTime, lastClickSlot]);
+
+  // Çift tıklama için ayrı handler
+  const handleDoubleClickSlot = useCallback(({ start, end }, e) => {
+    console.log('Double click slot:', { start, end }, e);
+    setSelectedDate(start);
+    setSelectedTimeRange({ start, end });
+    setSelectedSlot({ start, end });
+    setShowInterviewModal(true);
+  }, []);
+
+  // Ajanda görünümünde çift tıklama kontrolü
+  const handleAgendaDoubleClick = useCallback((start, end) => {
+    console.log('Agenda double click:', { start, end });
+    setSelectedDate(start);
+    setSelectedTimeRange({ start, end });
+    setShowInterviewModal(true);
+  }, []);
 
   // Tarihe sağ tıklama - context menü aç
   const handleSlotRightClick = useCallback(({ start, end }, e) => {
@@ -195,6 +229,33 @@ const InterviewCalendar = () => {
       setSelectedCandidate(candidate);
       setShowInterviewModal(true);
     }
+  };
+
+  // Ajanda görünümünde saat aralığı seçimi
+  const handleAgendaSlotSelect = (start, end) => {
+    console.log('Agenda slot selected:', { start, end });
+    setSelectedAgendaSlot({ start, end });
+    setSelectedDate(start);
+    setSelectedTimeRange({ start, end });
+  };
+
+  // Ajanda görünümünde saat aralığına sağ tıklama
+  const handleAgendaSlotRightClick = (start, end, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Agenda slot right click:', { start, end });
+    
+    setSelectedAgendaSlot({ start, end });
+    setSelectedDate(start);
+    setSelectedTimeRange({ start, end });
+    
+    setContextMenu({
+      show: true,
+      x: e.clientX,
+      y: e.clientY,
+      interview: null,
+      slot: { start, end }
+    });
   };
 
 
@@ -387,6 +448,107 @@ const InterviewCalendar = () => {
     );
   };
 
+  // Ajanda görünümü için saat aralığı seçimi component'i
+  const AgendaSlotSelector = ({ start, end, isSelected }) => {
+    const [lastClickTime, setLastClickTime] = useState(0);
+
+    const handleClick = (e) => {
+      e.stopPropagation();
+      
+      // Çift tıklama kontrolü
+      const now = Date.now();
+      const timeDiff = now - lastClickTime;
+      
+      if (timeDiff < 500) {
+        // Çift tıklama - hemen modal aç
+        console.log('Double click detected on agenda slot:', { start, end });
+        handleAgendaDoubleClick(start, end);
+        setLastClickTime(0);
+      } else {
+        // Normal tıklama - sadece seçimi kaydet
+        console.log('Normal click on agenda slot:', { start, end });
+        handleAgendaSlotSelect(start, end);
+        setLastClickTime(now);
+      }
+    };
+
+    const handleRightClick = (e) => {
+      handleAgendaSlotRightClick(start, end, e);
+    };
+
+    const formatTime = (date) => {
+      return new Date(date).toLocaleTimeString('tr-TR', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    };
+
+    return (
+      <div 
+        className={`p-2 m-1 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
+          isSelected 
+            ? 'border-blue-500 bg-blue-50' 
+            : 'border-gray-300 hover:border-blue-400 hover:bg-blue-25'
+        }`}
+        onClick={handleClick}
+        onContextMenu={handleRightClick}
+      >
+        <div className="text-sm font-medium text-gray-700 text-center">
+          {formatTime(start)} - {formatTime(end)}
+        </div>
+        <div className="text-xs text-gray-500 text-center">
+          {isSelected ? 'Seçili' : 'Tıklayın'}
+        </div>
+      </div>
+    );
+  };
+
+  // Ajanda görünümü için wrapper component
+  const AgendaWrapper = ({ children }) => {
+    const [timeSlots, setTimeSlots] = useState([]);
+
+    useEffect(() => {
+      // Günlük saat aralıklarını oluştur (09:00 - 18:00 arası, 1 saatlik aralıklar)
+      const slots = [];
+      const startHour = 9;
+      const endHour = 18;
+      
+      for (let hour = startHour; hour < endHour; hour++) {
+        const start = new Date();
+        start.setHours(hour, 0, 0, 0);
+        const end = new Date();
+        end.setHours(hour + 1, 0, 0, 0);
+        slots.push({ start, end });
+      }
+      
+      setTimeSlots(slots);
+    }, []);
+
+    return (
+      <div className="agenda-wrapper">
+        {/* Saat aralığı seçimi */}
+        <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+          <h3 className="text-sm font-medium text-gray-700 mb-2">Saat Aralığı Seçin</h3>
+          <div className="grid grid-cols-3 gap-2">
+            {timeSlots.map((slot, index) => (
+              <AgendaSlotSelector
+                key={index}
+                start={slot.start}
+                end={slot.end}
+                isSelected={selectedAgendaSlot && 
+                  selectedAgendaSlot.start.getTime() === slot.start.getTime() &&
+                  selectedAgendaSlot.end.getTime() === slot.end.getTime()}
+              />
+            ))}
+          </div>
+        </div>
+        
+        {/* Mevcut ajanda içeriği */}
+        {children}
+      </div>
+    );
+  };
+
   // Ajanda görünümü için özel component
   const AgendaEvent = ({ event }) => {
     const handleContextMenu = (e) => {
@@ -551,6 +713,8 @@ const InterviewCalendar = () => {
             style={{ height: '100%' }}
             onSelectEvent={handleEventClick}
             onSelectSlot={handleSelectSlot}
+            onDoubleClickEvent={handleDoubleClickSlot}
+            onDoubleClickSlot={handleDoubleClickSlot}
             view={view}
             date={date}
             onNavigate={handleNavigate}
@@ -561,7 +725,8 @@ const InterviewCalendar = () => {
             components={{
               eventWrapper: EventWrapper,
               agenda: {
-                event: AgendaEvent
+                event: AgendaEvent,
+                wrapper: AgendaWrapper
               }
             }}
             messages={{

@@ -204,8 +204,8 @@ const InterviewModal = ({ isOpen, onClose, onSubmit, selectedDate, selectedTimeR
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[95vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">
@@ -220,7 +220,7 @@ const InterviewModal = ({ isOpen, onClose, onSubmit, selectedDate, selectedTimeR
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form id="interview-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
           {/* Aday Seçimi */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -291,7 +291,7 @@ const InterviewModal = ({ isOpen, onClose, onSubmit, selectedDate, selectedTimeR
           </div>
 
           {/* Tarih ve Saat */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Tarih *
@@ -366,15 +366,15 @@ const InterviewModal = ({ isOpen, onClose, onSubmit, selectedDate, selectedTimeR
           </div>
 
           {/* Mülakat Türü ve Konum */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="flex flex-col">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Mülakat Türü
               </label>
               <select
                 value={formData.meetingType}
                 onChange={(e) => handleInputChange('meetingType', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-10"
               >
                 <option value="in-person">Yüz Yüze</option>
                 <option value="video">Video Görüşme</option>
@@ -382,7 +382,7 @@ const InterviewModal = ({ isOpen, onClose, onSubmit, selectedDate, selectedTimeR
               </select>
             </div>
 
-            <div>
+            <div className="flex flex-col">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Konum / Link
               </label>
@@ -390,7 +390,7 @@ const InterviewModal = ({ isOpen, onClose, onSubmit, selectedDate, selectedTimeR
                 type="text"
                 value={formData.location}
                 onChange={(e) => handleInputChange('location', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-10"
                 placeholder={formData.meetingType === 'video' ? 'Zoom/Teams linki' : 'Ofis konumu'}
               />
             </div>
@@ -421,29 +421,31 @@ const InterviewModal = ({ isOpen, onClose, onSubmit, selectedDate, selectedTimeR
             <textarea
               value={formData.notes}
               onChange={(e) => handleInputChange('notes', e.target.value)}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              rows={2}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
               placeholder="Mülakat hakkında notlar..."
             />
           </div>
 
-          {/* Buttons */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
-            >
-              İptal
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-            >
-              Mülakat Ekle
-            </button>
-          </div>
         </form>
+
+        {/* Buttons - Fixed Footer */}
+        <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+          >
+            İptal
+          </button>
+          <button
+            type="submit"
+            form="interview-form"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+          >
+            {editingInterview ? 'Güncelle' : 'Mülakat Ekle'}
+          </button>
+        </div>
       </div>
     </div>
   );
