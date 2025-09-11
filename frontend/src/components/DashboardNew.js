@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { dashboardAPI } from '../services/api';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
 const DashboardNew = () => {
   const [dashboardData, setDashboardData] = useState({
     statistics: {
-      totalApplications: 0,
-      activeCandidates: 0,
-      interviewsThisMonth: 0,
-      hiredCandidates: 0
+      total_applications: 0,
+      active_candidates: 0,
+      interviews_this_month: 0,
+      hired_candidates: 0
     },
-    candidateStatusDistribution: [],
-    positionApplicationVolume: [],
-    upcomingInterviews: []
+    candidate_status_distribution: [],
+    position_application_volume: [],
+    upcoming_interviews: []
   });
   const [loading, setLoading] = useState(true);
 
@@ -31,12 +32,12 @@ const DashboardNew = () => {
         // Fallback to mock data if API fails
         const mockData = {
           statistics: {
-            totalApplications: 1250,
-            activeCandidates: 320,
-            interviewsThisMonth: 85,
-            hiredCandidates: 15
+            total_applications: 1250,
+            active_candidates: 320,
+            interviews_this_month: 85,
+            hired_candidates: 15
           },
-          candidateStatusDistribution: [
+          candidate_status_distribution: [
             { status: 'Başvurdu', count: 450, percentage: 25, color: '#137fec' },
             { status: 'İnceleme', count: 360, percentage: 20, color: '#4ade80' },
             { status: 'Mülakat', count: 270, percentage: 15, color: '#facc15' },
@@ -44,7 +45,7 @@ const DashboardNew = () => {
             { status: 'İşe Alındı', count: 45, percentage: 2.5, color: '#fb923c' },
             { status: 'Reddedildi', count: 585, percentage: 32.5, color: '#a78bfa' }
           ],
-          positionApplicationVolume: [
+          position_application_volume: [
             { position: 'Yazılım Mühendisi', count: 200, percentage: 20 },
             { position: 'Ürün Yöneticisi', count: 700, percentage: 70 },
             { position: 'Pazarlama Uzmanı', count: 800, percentage: 80 },
@@ -52,10 +53,10 @@ const DashboardNew = () => {
             { position: 'Veri Analisti', count: 900, percentage: 90 },
             { position: 'UX Tasarımcısı', count: 100, percentage: 10 }
           ],
-          upcomingInterviews: [
+          upcoming_interviews: [
             {
               id: 1,
-              candidateName: 'Elif Demir',
+              candidate_name: 'Elif Demir',
               position: 'Yazılım Mühendisi',
               date: '2024-07-20',
               time: '10:00',
@@ -64,7 +65,7 @@ const DashboardNew = () => {
             },
             {
               id: 2,
-              candidateName: 'Ahmet Yılmaz',
+              candidate_name: 'Ahmet Yılmaz',
               position: 'Ürün Yöneticisi',
               date: '2024-07-21',
               time: '14:00',
@@ -73,7 +74,7 @@ const DashboardNew = () => {
             },
             {
               id: 3,
-              candidateName: 'Ayşe Kaya',
+              candidate_name: 'Ayşe Kaya',
               position: 'Pazarlama Uzmanı',
               date: '2024-07-22',
               time: '11:00',
@@ -82,7 +83,7 @@ const DashboardNew = () => {
             },
             {
               id: 4,
-              candidateName: 'Mehmet Can',
+              candidate_name: 'Mehmet Can',
               position: 'Satış Temsilcisi',
               date: '2024-07-23',
               time: '15:00',
@@ -91,7 +92,7 @@ const DashboardNew = () => {
             },
             {
               id: 5,
-              candidateName: 'Zeynep Tekin',
+              candidate_name: 'Zeynep Tekin',
               position: 'Veri Analisti',
               date: '2024-07-24',
               time: '09:00',
@@ -120,6 +121,7 @@ const DashboardNew = () => {
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -131,20 +133,13 @@ const DashboardNew = () => {
   return (
     <div className="bg-[#F8F9FA]">
       <main className="p-8">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">Dashboard</h2>
-          <button className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-[#137fec] rounded-lg shadow-sm hover:bg-blue-700">
-            <span className="material-symbols-outlined">add</span>
-            Yeni İlan Oluştur
-          </button>
-        </div>
 
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="bg-white p-6 rounded-xl border border-gray-200 flex items-start justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500">Toplam Başvuru Sayısı</p>
-              <p className="text-3xl font-bold mt-1 text-gray-900">{dashboardData.statistics?.totalApplications?.toLocaleString() || '0'}</p>
+              <p className="text-3xl font-bold mt-1 text-gray-900">{dashboardData.statistics?.total_applications?.toLocaleString() || '0'}</p>
             </div>
             <div className="p-3 bg-blue-100 rounded-lg">
               <span className="material-symbols-outlined text-[#137fec]">folder_open</span>
@@ -154,7 +149,7 @@ const DashboardNew = () => {
           <div className="bg-white p-6 rounded-xl border border-gray-200 flex items-start justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500">Aktif Süreçteki Aday Sayısı</p>
-              <p className="text-3xl font-bold mt-1 text-gray-900">{dashboardData.statistics?.activeCandidates?.toLocaleString() || '0'}</p>
+              <p className="text-3xl font-bold mt-1 text-gray-900">{dashboardData.statistics?.active_candidates?.toLocaleString() || '0'}</p>
             </div>
             <div className="p-3 bg-green-100 rounded-lg">
               <span className="material-symbols-outlined text-green-500">person_search</span>
@@ -164,7 +159,7 @@ const DashboardNew = () => {
           <div className="bg-white p-6 rounded-xl border border-gray-200 flex items-start justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500">Bu Ay Görüşülen Aday Sayısı</p>
-              <p className="text-3xl font-bold mt-1 text-gray-900">{dashboardData.statistics?.interviewsThisMonth?.toLocaleString() || '0'}</p>
+              <p className="text-3xl font-bold mt-1 text-gray-900">{dashboardData.statistics?.interviews_this_month?.toLocaleString() || '0'}</p>
             </div>
             <div className="p-3 bg-yellow-100 rounded-lg">
               <span className="material-symbols-outlined text-yellow-500">calendar_month</span>
@@ -174,7 +169,7 @@ const DashboardNew = () => {
           <div className="bg-white p-6 rounded-xl border border-gray-200 flex items-start justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500">İşe Alınan Aday Sayısı</p>
-              <p className="text-3xl font-bold mt-1 text-gray-900">{dashboardData.statistics?.hiredCandidates?.toLocaleString() || '0'}</p>
+              <p className="text-3xl font-bold mt-1 text-gray-900">{dashboardData.statistics?.hired_candidates?.toLocaleString() || '0'}</p>
             </div>
             <div className="p-3 bg-purple-100 rounded-lg">
               <span className="material-symbols-outlined text-purple-500">person_add</span>
@@ -188,18 +183,34 @@ const DashboardNew = () => {
           <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-gray-200">
             <h3 className="text-lg font-semibold mb-4 text-gray-900">Aday Durum Dağılımı</h3>
             <div className="flex items-center justify-center gap-8">
-              <div className="pie-chart w-36 h-36 rounded-full" style={{
-                background: `conic-gradient(
-                  #137fec 0% 25%,
-                  #4ade80 25% 45%,
-                  #facc15 45% 60%,
-                  #f87171 60% 75%,
-                  #fb923c 75% 90%,
-                  #a78bfa 90% 100%
-                )`
-              }}></div>
+              <div className="w-64 h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={dashboardData.candidate_status_distribution || []}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={false}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="count"
+                    >
+                      {dashboardData.candidate_status_distribution?.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value, name, props) => [
+                        `${value} aday (${props.payload.percentage}%)`,
+                        props.payload.status
+                      ]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                {dashboardData.candidateStatusDistribution?.map((item, index) => (
+                {dashboardData.candidate_status_distribution?.map((item, index) => (
                   <div key={index} className="flex items-center gap-2">
                     <span 
                       className="w-3 h-3 rounded-full" 
@@ -215,19 +226,40 @@ const DashboardNew = () => {
           {/* Position Application Volume */}
           <div className="lg:col-span-3 bg-white p-6 rounded-xl border border-gray-200">
             <h3 className="text-lg font-semibold mb-4 text-gray-900">Pozisyonlara Göre Başvuru Yoğunluğu</h3>
-            <div className="grid grid-cols-6 gap-6 items-end h-56">
-              {dashboardData.positionApplicationVolume?.map((item, index) => (
-                <div key={index} className="flex flex-col items-center gap-2">
-                  <div 
-                    className="w-full rounded-t-md transition-all duration-300 hover:opacity-80" 
-                    style={{
-                      height: `${item.percentage}%`,
-                      backgroundColor: '#137fec'
-                    }}
-                  ></div>
-                  <p className="text-xs text-gray-500 text-center">{item.position}</p>
-                </div>
-              )) || []}
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={dashboardData.position_application_volume || []}
+                  margin={{
+                    top: 20,
+                    right: 30,
+                    left: 20,
+                    bottom: 60,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="position" 
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                    fontSize={12}
+                  />
+                  <YAxis />
+                  <Tooltip 
+                    formatter={(value, name, props) => [
+                      `${value} başvuru (${props.payload.percentage}%)`,
+                      'Başvuru Sayısı'
+                    ]}
+                    labelFormatter={(label) => `Pozisyon: ${label}`}
+                  />
+                  <Bar 
+                    dataKey="count" 
+                    fill="#137fec" 
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </div>
@@ -246,10 +278,10 @@ const DashboardNew = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {dashboardData.upcomingInterviews?.map((interview) => (
+                {dashboardData.upcoming_interviews?.map((interview) => (
                   <tr key={interview.id}>
                     <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
-                      {interview.candidateName}
+                      {interview.candidate_name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-gray-500">
                       {interview.position}
