@@ -100,7 +100,7 @@ const InterviewCalendar = () => {
     console.log('Last click slot:', lastClickSlot);
     
     if (action === 'select') {
-      // Mouse ile seçim yapıldığında seçimi kaydet
+      // Mouse ile seçim yapıldığında sadece seçimi kaydet, modal açma
       console.log('Select action on slot:', { start, end });
       setSelectedDate(start);
       setSelectedTimeRange({ start, end });
@@ -122,19 +122,19 @@ const InterviewCalendar = () => {
         setLastClickTime(0);
         setLastClickSlot(null);
       } else {
-        // Normal tıklama - seçimi kaydet ve modal aç
-        console.log('Normal click on slot, opening modal');
+        // Normal tıklama - sadece seçimi kaydet, modal açma
+        console.log('Normal click on slot, saving selection only');
         setLastClickTime(now);
         setLastClickSlot({ start, end });
-        setShowInterviewModal(true);
+        // Modal açılmıyor - sadece seçim yapılıyor
       }
     } else if (action === 'click') {
-      // Tek tıklama - seçimi kaydet ve modal aç
+      // Tek tıklama - sadece seçimi kaydet, modal açma
       console.log('Single click on slot:', { start, end });
       setSelectedDate(start);
       setSelectedTimeRange({ start, end });
       setSelectedSlot({ start, end });
-      setShowInterviewModal(true);
+      // Modal açılmıyor - sadece seçim yapılıyor
     } else if (action === 'doubleClick') {
       // Çift tıklama - hemen modal aç
       console.log('Double click on slot:', { start, end });
