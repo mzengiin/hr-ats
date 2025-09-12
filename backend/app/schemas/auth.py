@@ -72,6 +72,7 @@ class UserInfoResponse(BaseModel):
     phone: Optional[str] = None
     is_active: bool
     role: dict
+    profile_photo: Optional[str] = None
     created_at: str
     updated_at: str
 

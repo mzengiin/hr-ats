@@ -9,45 +9,74 @@ import CandidateSearchModal from './CandidateSearchModal';
 // Custom CSS for responsive calendar
 const customCalendarStyles = `
   .rbc-calendar {
-    height: 100% !important;
-    min-height: 600px !important;
-    overflow: visible !important;
+    height: 100vh !important;
+    min-height: 100vh !important;
   }
   
   .rbc-month-view {
     height: 100% !important;
-    overflow: visible !important;
   }
   
   .rbc-month-row {
     height: auto !important;
-    min-height: 150px !important;
+    min-height: 120px !important;
   }
   
   .rbc-date-cell {
-    height: 150px !important;
-    min-height: 150px !important;
+    height: 120px !important;
+    min-height: 120px !important;
     overflow: visible !important;
+    position: relative !important;
   }
   
   /* Aylık görünümde tarih hücreleri için özel kurallar */
   .rbc-month-view .rbc-date-cell {
-    height: 150px !important;
-    min-height: 150px !important;
+    height: 120px !important;
+    min-height: 120px !important;
     overflow: visible !important;
     position: relative !important;
   }
   
   .rbc-month-view .rbc-events-container {
     height: auto !important;
-    min-height: 120px !important;
+    min-height: 100px !important;
     overflow: visible !important;
     position: relative !important;
   }
   
   .rbc-events-container {
-    height: 100% !important;
+    height: auto !important;
     overflow: visible !important;
+  }
+  
+  .rbc-event {
+    position: relative !important;
+    z-index: 10 !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    min-height: 20px !important;
+    padding: 2px 4px !important;
+    margin: 1px 0 !important;
+    border-radius: 3px !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  
+  .rbc-event-content {
+    display: block !important;
+    visibility: visible !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+  
+  .rbc-event-label {
+    display: block !important;
+    visibility: visible !important;
   }
   
   .rbc-event {
@@ -172,6 +201,9 @@ const InterviewCalendar = () => {
       
       const response = await interviewsAPI.getCalendarInterviews(startOfMonth, endOfMonth);
       
+      console.log('API Response:', response);
+      console.log('Response data:', response.data);
+      
       // API'den gelen veriyi calendar formatına çevir
       const calendarInterviews = response.data.interviews.map(interview => {
         const startDate = new Date(interview.start);
@@ -194,6 +226,7 @@ const InterviewCalendar = () => {
         };
       });
       
+      console.log('Setting interviews:', calendarInterviews.length, 'interviews');
       setInterviews(calendarInterviews);
     } catch (err) {
       console.error('Error loading interviews:', err);
@@ -557,10 +590,19 @@ const InterviewCalendar = () => {
         backgroundColor,
         borderColor,
         borderRadius: '4px',
-        opacity: 0.8,
+        opacity: 1,
         color: 'white',
         border: '0px',
-        display: 'block'
+        display: 'block',
+        height: 'auto',
+        minHeight: '20px',
+        padding: '2px 4px',
+        margin: '1px 0',
+        fontSize: '12px',
+        lineHeight: '1.2',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis'
       }
     };
   };
@@ -775,7 +817,7 @@ const InterviewCalendar = () => {
   };
 
   return (
-    <div className="h-full bg-white rounded-lg shadow-sm flex flex-col">
+    <div className="h-screen bg-white rounded-lg shadow-sm flex flex-col" style={{ height: '100vh' }}>
       {/* Header */}
       <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center gap-4">
@@ -843,12 +885,13 @@ const InterviewCalendar = () => {
             }
           }}
         >
+          {console.log('Rendering Calendar with', interviews.length, 'interviews:', interviews)}
           <Calendar
             localizer={localizer}
             events={interviews}
             startAccessor="start"
             endAccessor="end"
-            style={{ height: '600px', minHeight: '600px' }}
+            style={{ height: 'calc(100vh - 120px)', width: '100%' }}
             onSelectEvent={handleEventClick}
             onSelectSlot={handleSelectSlot}
             onDoubleClickEvent={handleDoubleClickSlot}

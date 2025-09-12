@@ -405,3 +405,113 @@ async def delete_user(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/profile/info", response_model=dict)
+async def update_profile_info(
+    first_name: Optional[str] = Form(None),
+    last_name: Optional[str] = Form(None),
+    phone: Optional[str] = Form(None),
+    profile_photo: Optional[UploadFile] = File(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Update current user's profile information (name, phone, photo)
+    """
+    try:
+        print(f"Updating profile for user {current_user.id}: first_name={first_name}, last_name={last_name}, phone={phone}")
+        
+        # Get fresh user data
+        user = db.query(User).filter(User.id == current_user.id).first()
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Handle profile photo upload
+        if profile_photo:
+            # Create uploads directory if it doesn't exist
+            upload_dir = "uploads/profile_photos"
+            os.makedirs(upload_dir, exist_ok=True)
+            
+            # Generate unique filename
+            file_extension = profile_photo.filename.split('.')[-1] if '.' in profile_photo.filename else 'jpg'
+            filename = f"{user.email}_{profile_photo.filename}"
+            file_path = os.path.join(upload_dir, filename)
+            
+            # Save file
+            with open(file_path, "wb") as buffer:
+                shutil.copyfileobj(profile_photo.file, buffer)
+            
+            user.profile_photo = f"/uploads/profile_photos/{filename}"
+        
+        # Update user fields
+        if first_name is not None:
+            user.first_name = first_name
+        if last_name is not None:
+            user.last_name = last_name
+        if phone is not None:
+            user.phone = phone
+        
+        user.updated_by = current_user.id
+        
+        db.commit()
+        
+        # Return updated user data
+        return {
+            "success": True,
+            "message": "Profile updated successfully",
+            "data": {
+                "id": str(user.id),
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "email": user.email,
+                "phone": user.phone,
+                "profile_photo": user.profile_photo
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/profile/password", response_model=dict)
+async def update_profile_password(
+    current_password: str = Form(...),
+    new_password: str = Form(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Update current user's password
+    """
+    try:
+        print(f"Updating password for user {current_user.id}")
+        
+        # Get fresh user data
+        user = db.query(User).filter(User.id == current_user.id).first()
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Verify current password
+        if not pwd_context.verify(current_password, user.password_hash):
+            raise HTTPException(status_code=400, detail="Current password is incorrect")
+        
+        # Update password
+        user.password_hash = pwd_context.hash(new_password)
+        user.updated_by = current_user.id
+        
+        db.commit()
+        
+        return {
+            "success": True,
+            "message": "Password updated successfully"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))

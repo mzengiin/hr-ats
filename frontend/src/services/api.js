@@ -130,6 +130,22 @@ export const usersAPI = {
   updateUser: (id, userData) => 
     api.put(`/users/${id}`, userData),
 
+  // Update profile info (name, phone, photo)
+  updateProfileInfo: (userData) => 
+    api.put('/users/profile/info', userData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    }),
+
+  // Update profile password
+  updateProfilePassword: (passwordData) => 
+    api.put('/users/profile/password', passwordData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    }),
+
   // Delete user
   deleteUser: (id) => 
     api.delete(`/users/${id}`),

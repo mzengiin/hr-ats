@@ -124,7 +124,8 @@ def logout(
 
 @router.get("/me", response_model=UserInfoResponse, status_code=status.HTTP_200_OK)
 def get_current_user(
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
 ):
     """
     Get current user information
@@ -132,26 +133,46 @@ def get_current_user(
     Requires authentication
     """
     try:
+        # Fresh user data from database to avoid cache issues
+        fresh_user = db.query(User).filter(User.id == current_user.id).first()
+        if not fresh_user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
         # Get user role info
         role_info = None
-        if current_user.role:
+        if fresh_user.role:
+            # Get permissions as list of permission objects with details
+            permissions = []
+            if hasattr(fresh_user.role, 'permissions') and fresh_user.role.permissions:
+                for role_permission in fresh_user.role.permissions:
+                    if hasattr(role_permission, 'permission') and role_permission.permission:
+                        permission = role_permission.permission
+                        permissions.append({
+                            "id": str(permission.id),
+                            "name": permission.name,
+                            "code": permission.code,
+                            "description": permission.description,
+                            "category": permission.category
+                        })
+            
             role_info = {
-                "id": str(current_user.role.id),
-                "name": current_user.role.name,
-                "description": current_user.role.description,
-                "permissions": current_user.role.permissions
+                "id": str(fresh_user.role.id),
+                "name": fresh_user.role.name,
+                "description": fresh_user.role.description,
+                "permissions": permissions
             }
         
         return UserInfoResponse(
-            id=str(current_user.id),
-            email=current_user.email,
-            first_name=current_user.first_name,
-            last_name=current_user.last_name,
-            phone=current_user.phone,
-            is_active=current_user.is_active,
+            id=str(fresh_user.id),
+            email=fresh_user.email,
+            first_name=fresh_user.first_name,
+            last_name=fresh_user.last_name,
+            phone=fresh_user.phone,
+            is_active=fresh_user.is_active,
             role=role_info,
-            created_at=current_user.created_at.isoformat(),
-            updated_at=current_user.updated_at.isoformat()
+            profile_photo=fresh_user.profile_photo,
+            created_at=fresh_user.created_at.isoformat(),
+            updated_at=fresh_user.updated_at.isoformat()
         )
         
     except Exception as e:
