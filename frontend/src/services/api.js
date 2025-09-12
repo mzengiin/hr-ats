@@ -208,11 +208,11 @@ export const candidatesAPI = {
 
   // Get candidate interviews
   getCandidateInterviews: (candidateId) => 
-    api.get(`/candidates/candidates/${candidateId}/interviews`),
+    api.get(`/candidates/${candidateId}/interviews`),
 
   // Get candidate case studies
   getCandidateCaseStudies: (candidateId) => 
-    api.get(`/candidates/candidates/${candidateId}/case-studies`),
+    api.get(`/candidates/${candidateId}/case-studies`),
 
   // Download candidate CV
   downloadCandidateCv: (candidateId) => 

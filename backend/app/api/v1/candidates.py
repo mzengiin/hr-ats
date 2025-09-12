@@ -14,6 +14,8 @@ from app.models.position import Position
 from app.models.application_channel import ApplicationChannel
 from app.models.candidate_status import CandidateStatus
 from app.models.user import User
+from app.models.interview import Interview
+from app.models.case_study import CaseStudy
 
 router = APIRouter()
 
@@ -58,6 +60,26 @@ class CandidateListResponse(BaseModel):
     per_page: int
     total_pages: int
 
+class InterviewResponse(BaseModel):
+    id: int
+    title: str
+    interviewer_name: str
+    start_datetime: str
+    end_datetime: str
+    status: str
+    meeting_type: str
+    location: Optional[str] = None
+    notes: Optional[str] = None
+
+class CaseStudyResponse(BaseModel):
+    id: int
+    title: str
+    description: Optional[str] = None
+    due_date: str
+    status: str
+    file_path: Optional[str] = None
+    notes: Optional[str] = None
+
 # Mock data constants removed - now using database lookup tables
 
 def candidate_to_response(candidate: Candidate) -> CandidateResponse:
@@ -77,6 +99,32 @@ def candidate_to_response(candidate: Candidate) -> CandidateResponse:
         cv_file_path=candidate.cv_file_path,
         created_at=candidate.created_at.isoformat(),
         updated_at=candidate.updated_at.isoformat()
+    )
+
+def interview_to_response(interview: Interview) -> InterviewResponse:
+    """Convert Interview model to InterviewResponse"""
+    return InterviewResponse(
+        id=interview.id,
+        title=interview.title,
+        interviewer_name=interview.interviewer_name,
+        start_datetime=interview.start_datetime.isoformat(),
+        end_datetime=interview.end_datetime.isoformat(),
+        status=interview.status,
+        meeting_type=interview.meeting_type,
+        location=interview.location,
+        notes=interview.notes
+    )
+
+def case_study_to_response(case_study: CaseStudy) -> CaseStudyResponse:
+    """Convert CaseStudy model to CaseStudyResponse"""
+    return CaseStudyResponse(
+        id=case_study.id,
+        title=case_study.title,
+        description=case_study.description,
+        due_date=case_study.due_date.isoformat(),
+        status=case_study.status,
+        file_path=case_study.file_path,
+        notes=case_study.notes
     )
 
 @router.get("/", response_model=CandidateListResponse)
@@ -565,4 +613,54 @@ async def view_candidate_cv(candidate_id: int, db: Session = Depends(get_db)):
         raise
     except Exception as e:
         print(f"Error viewing CV for candidate {candidate_id}: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@router.get("/{candidate_id}/interviews", response_model=List[InterviewResponse])
+async def get_candidate_interviews(candidate_id: int, db: Session = Depends(get_db)):
+    """Get interviews for a specific candidate"""
+    try:
+        # Check if candidate exists
+        candidate = db.query(Candidate).filter(
+            and_(Candidate.id == candidate_id, Candidate.is_active == True)
+        ).first()
+        
+        if not candidate:
+            raise HTTPException(status_code=404, detail="Candidate not found")
+        
+        # Get interviews for the candidate
+        interviews = db.query(Interview).filter(
+            and_(Interview.candidate_id == candidate_id, Interview.is_active == True)
+        ).order_by(Interview.start_datetime.desc()).all()
+        
+        return [interview_to_response(interview) for interview in interviews]
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error getting interviews for candidate {candidate_id}: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@router.get("/{candidate_id}/case-studies", response_model=List[CaseStudyResponse])
+async def get_candidate_case_studies(candidate_id: int, db: Session = Depends(get_db)):
+    """Get case studies for a specific candidate"""
+    try:
+        # Check if candidate exists
+        candidate = db.query(Candidate).filter(
+            and_(Candidate.id == candidate_id, Candidate.is_active == True)
+        ).first()
+        
+        if not candidate:
+            raise HTTPException(status_code=404, detail="Candidate not found")
+        
+        # Get case studies for the candidate
+        case_studies = db.query(CaseStudy).filter(
+            and_(CaseStudy.candidate_id == candidate_id, CaseStudy.is_active == True)
+        ).order_by(CaseStudy.due_date.desc()).all()
+        
+        return [case_study_to_response(case_study) for case_study in case_studies]
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error getting case studies for candidate {candidate_id}: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
