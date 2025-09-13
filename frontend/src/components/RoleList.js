@@ -58,8 +58,19 @@ const RoleList = () => {
       }
 
       const data = await response.json();
-      setRoles(data.roles);
-      setTotalPages(Math.ceil(data.total / 10));
+      console.log('RoleList API Response:', data);
+      
+      // API response yapısını kontrol et
+      if (data.success && data.data) {
+        setRoles(data.data.roles || []);
+        setTotalPages(Math.ceil((data.data.total || 0) / 10));
+      } else if (data.roles) {
+        setRoles(data.roles || []);
+        setTotalPages(Math.ceil((data.total || 0) / 10));
+      } else {
+        setRoles([]);
+        setTotalPages(1);
+      }
     } catch (error) {
       console.error('Error fetching roles:', error);
     } finally {
@@ -288,7 +299,7 @@ const RoleList = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {roles.length === 0 ? (
+                {!roles || roles.length === 0 ? (
                   <tr>
                     <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
                       Henüz rol bulunmuyor.

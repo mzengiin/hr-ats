@@ -68,8 +68,19 @@ const UserList = () => {
       }
 
       const data = await response.json();
-      setUsers(data.users);
-      setTotalPages(Math.ceil(data.total / 10));
+      console.log('UserList API Response:', data);
+      
+      // API response yapısını kontrol et
+      if (data.success && data.data) {
+        setUsers(data.data.users || []);
+        setTotalPages(Math.ceil((data.data.total || 0) / 10));
+      } else if (data.users) {
+        setUsers(data.users || []);
+        setTotalPages(Math.ceil((data.total || 0) / 10));
+      } else {
+        setUsers([]);
+        setTotalPages(1);
+      }
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
@@ -339,7 +350,7 @@ const UserList = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {users.length === 0 ? (
+                {!users || users.length === 0 ? (
                   <tr>
                     <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
                       Henüz kullanıcı bulunmuyor.
