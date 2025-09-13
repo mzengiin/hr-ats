@@ -125,222 +125,207 @@ const CandidateList = () => {
   }
 
   return (
-    <div className="bg-[#F8F9FA] min-h-screen">
-      <main className="p-8">
-        <div className="mx-auto max-w-full">
-          {/* Header */}
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-            <h2 className="text-2xl font-bold text-gray-900">Adaylar</h2>
+    <div className="p-6 lg:p-8">
+      <div className="flex flex-col flex-1 bg-white rounded-xl shadow-sm border border-gray-200">
+        {/* Header */}
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex flex-wrap justify-between items-center gap-4">
+            <div className="flex flex-col gap-1">
+              <h2 className="text-2xl font-bold leading-tight tracking-[-0.015em]">
+                Adaylar
+              </h2>
+              <p className="text-gray-500 text-sm font-normal">
+                Tüm adayları buradan görüntüleyebilir ve yönetebilirsiniz.
+              </p>
+            </div>
             <Link
               to="/candidates/new"
-              className="flex min-w-[120px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg h-11 px-5 bg-[#137fec] text-white text-base font-semibold leading-normal shadow-sm hover:bg-blue-700 transition-colors"
+              className="flex items-center justify-center gap-2 min-w-[84px] cursor-pointer overflow-hidden rounded-md h-12 px-6 bg-blue-600 text-white text-base font-bold leading-normal tracking-wide shadow-sm hover:bg-opacity-90 transition-colors"
             >
-              <span className="material-symbols-outlined text-xl">add</span>
-              <span className="truncate">Aday Ekle</span>
+              <span className="material-symbols-outlined">add</span>
+              <span>Aday Ekle</span>
             </Link>
           </div>
 
-          {/* Search and Filters */}
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-4 flex-1">
-              <form onSubmit={handleSearch} className="relative flex-1 max-w-md">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">search</span>
-                <input
-                  className="w-full min-w-[250px] resize-none overflow-hidden rounded-md text-gray-800 focus:outline-0 focus:ring-2 focus:ring-[#137fec] border border-gray-300 bg-white h-11 placeholder:text-gray-500 pl-10 pr-4 text-sm font-normal leading-normal"
-                  placeholder="İsim, pozisyon, e-posta, telefon ile ara"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </form>
-              
-              <div className="relative">
-                <select
-                  className="w-full appearance-none rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700 focus:border-[#137fec] focus:ring-2 focus:ring-[#137fec]/50"
-                  value={statusFilter}
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value);
-                    handleFilterChange();
-                  }}
-                >
-                  {statusOptions.map(option => (
-                    <option key={option} value={option}>Durum: {option}</option>
-                  ))}
-                </select>
-                <span className="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">expand_more</span>
+          {/* Filters */}
+          <div className="mt-6 flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                <span className="material-symbols-outlined text-gray-400">
+                  search
+                </span>
               </div>
-              
-              <div className="relative">
-                <select
-                  className="w-full appearance-none rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700 focus:border-[#137fec] focus:ring-2 focus:ring-[#137fec]/50"
-                  value={positionFilter}
-                  onChange={(e) => {
-                    setPositionFilter(e.target.value);
-                    handleFilterChange();
-                  }}
-                >
-                  {positionOptions.map(option => (
-                    <option key={option} value={option}>Pozisyon: {option}</option>
-                  ))}
-                </select>
-                <span className="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">expand_more</span>
-              </div>
+              <input
+                type="text"
+                placeholder="İsim, pozisyon, e-posta, telefon ile ara..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex w-full min-w-0 rounded-md text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-gray-300 bg-white h-11 placeholder:text-gray-400 pl-10 pr-4 text-base font-normal"
+              />
+            </div>
+            <div className="flex gap-4">
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  handleFilterChange();
+                }}
+                className="flex w-full sm:w-auto min-w-0 rounded-md text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-gray-300 bg-white h-11 px-4 text-sm font-medium"
+              >
+                {statusOptions.map(option => (
+                  <option key={option} value={option}>
+                    {option === 'Tümü' ? 'Duruma Göre Filtrele' : option}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={positionFilter}
+                onChange={(e) => {
+                  setPositionFilter(e.target.value);
+                  handleFilterChange();
+                }}
+                className="flex w-full sm:w-auto min-w-0 rounded-md text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-gray-300 bg-white h-11 px-4 text-sm font-medium"
+              >
+                {positionOptions.map(option => (
+                  <option key={option} value={option}>
+                    {option === 'Tümü' ? 'Pozisyona Göre Filtrele' : option}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
+        </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-              {error}
+        {/* Error Message */}
+        {error && (
+          <div className="mx-6 mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
+
+        {/* Table */}
+        <div className="overflow-x-auto">
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
-          )}
-
-          {/* Table */}
-          <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-            <div className="mb-4 flex items-center justify-between">
-              <p className="text-sm text-gray-600">
-                <span className="font-semibold text-gray-800">{total}</span> adaydan{' '}
-                <span className="font-semibold text-gray-800">
-                  {((currentPage - 1) * perPage) + 1}-{Math.min(currentPage * perPage, total)}
-                </span> arası gösteriliyor
-              </p>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Sırala:</span>
-                <button className="flex items-center gap-1 rounded-md px-2 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100">
-                  Tarih
-                  <span className="material-symbols-outlined text-base">arrow_downward</span>
-                </button>
-                <button className="flex items-center gap-1 rounded-md px-2 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-100">
-                  İsim
-                </button>
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead className="border-b border-gray-200">
+          ) : (
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="px-6 py-4 text-sm font-semibold text-gray-600">
+                    <input
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      type="checkbox"
+                      checked={selectedCandidates.length === candidates.length && candidates.length > 0}
+                      onChange={handleSelectAll}
+                    />
+                  </th>
+                  <th className="px-6 py-4 text-sm font-semibold text-gray-600">
+                    Aday Adı
+                  </th>
+                  <th className="px-6 py-4 text-sm font-semibold text-gray-600">
+                    Pozisyon
+                  </th>
+                  <th className="px-6 py-4 text-sm font-semibold text-gray-600 text-center">
+                    Durum
+                  </th>
+                  <th className="px-6 py-4 text-sm font-semibold text-gray-600">
+                    Başvuru Tarihi
+                  </th>
+                  <th className="px-6 py-4 text-sm font-semibold text-gray-600 text-center">
+                    İşlemler
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {candidates.length === 0 ? (
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      <input
-                        className="rounded border-gray-300 text-[#137fec] focus:ring-[#137fec]/50"
-                        type="checkbox"
-                        checked={selectedCandidates.length === candidates.length && candidates.length > 0}
-                        onChange={handleSelectAll}
-                      />
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Aday Adı</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Pozisyon</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Durum</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Başvuru Tarihi</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">İşlemler</th>
+                    <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                      Henüz aday bulunmuyor.
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {candidates.map((candidate) => (
+                ) : (
+                  candidates.map((candidate) => (
                     <tr key={candidate.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 align-middle">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <input
-                          className="rounded border-gray-300 text-[#137fec] focus:ring-[#137fec]/50"
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                           type="checkbox"
                           checked={selectedCandidates.includes(candidate.id)}
                           onChange={() => handleSelectCandidate(candidate.id)}
                         />
                       </td>
-                      <td className="px-4 py-3 text-sm font-medium text-gray-800 align-middle">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {candidate.first_name} {candidate.last_name}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600 align-middle">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                         {candidate.position}
                       </td>
-                      <td className="px-4 py-3 align-middle">
-                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusColor(candidate.status)}`}>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(candidate.status)}`}>
                           {candidate.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600 align-middle">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                         {formatDate(candidate.application_date)}
                       </td>
-                      <td className="px-4 py-3 text-right align-middle">
-                        <div className="flex items-center gap-2">
-                          <Link
-                            to={`/candidates/${candidate.id}`}
-                            className="p-1.5 text-gray-500 hover:text-[#137fec]"
-                            title="Detayları Görüntüle"
-                          >
-                            <span className="material-symbols-outlined text-lg">visibility</span>
-                          </Link>
-                          <Link
-                            to={`/candidates/${candidate.id}/edit`}
-                            className="p-1.5 text-gray-500 hover:text-green-600"
-                            title="Düzenle"
-                          >
-                            <span className="material-symbols-outlined text-lg">edit</span>
-                          </Link>
-                          <button
-                            onClick={() => handleDeleteCandidate(candidate.id)}
-                            className="p-1.5 text-gray-500 hover:text-red-600"
-                            title="Sil"
-                          >
-                            <span className="material-symbols-outlined text-lg">delete</span>
-                          </button>
-                        </div>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center space-x-2">
+                        <Link
+                          to={`/candidates/${candidate.id}`}
+                          className="text-blue-600 hover:text-blue-800 font-semibold text-sm"
+                        >
+                          Görüntüle
+                        </Link>
+                        <Link
+                          to={`/candidates/${candidate.id}/edit`}
+                          className="text-green-600 hover:text-green-800 font-semibold text-sm"
+                        >
+                          Düzenle
+                        </Link>
+                        <button
+                          onClick={() => handleDeleteCandidate(candidate.id)}
+                          className="text-red-600 hover:text-red-800 font-semibold text-sm"
+                        >
+                          Sil
+                        </button>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
 
-            {/* Pagination */}
-            <div className="mt-6 flex items-center justify-between">
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="px-6 py-4 border-t border-gray-200 flex justify-between items-center">
+            <div className="text-sm text-gray-500">
+              <span className="font-semibold text-gray-800">{total}</span> adaydan{' '}
+              <span className="font-semibold text-gray-800">
+                {((currentPage - 1) * perPage) + 1}-{Math.min(currentPage * perPage, total)}
+              </span> arası gösteriliyor
+            </div>
+            <div className="flex gap-2">
               <button
-                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Önceki
               </button>
-              
-              <nav className="flex items-center gap-2">
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const pageNum = i + 1;
-                  return (
-                    <button
-                      key={pageNum}
-                      className={`flex size-8 items-center justify-center rounded-md text-sm font-medium ${
-                        currentPage === pageNum
-                          ? 'bg-[#137fec] text-white'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                      onClick={() => setCurrentPage(pageNum)}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                })}
-                {totalPages > 5 && (
-                  <>
-                    <span className="text-gray-500">...</span>
-                    <button
-                      className="flex size-8 items-center justify-center rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100"
-                      onClick={() => setCurrentPage(totalPages)}
-                    >
-                      {totalPages}
-                    </button>
-                  </>
-                )}
-              </nav>
-              
               <button
-                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Sonraki
               </button>
             </div>
           </div>
-        </div>
-      </main>
+        )}
+      </div>
     </div>
   );
 };

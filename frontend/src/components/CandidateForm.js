@@ -175,10 +175,28 @@ const CandidateForm = () => {
     }
   };
 
-  const handleRemoveCv = () => {
-    setExistingCv(null);
-    setCvFile(null);
-    setShowCvUpload(true);
+  const handleRemoveCv = async () => {
+    if (window.confirm('CV dosyasını silmek istediğinizden emin misiniz?')) {
+      try {
+        if (id && existingCv) {
+          // Delete from backend
+          await candidatesAPI.deleteCandidateCv(id);
+        }
+        setExistingCv(null);
+        setCvFile(null);
+        setShowCvUpload(true);
+        setError(null);
+        setSuccessMessage('CV dosyası başarıyla silindi.');
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => {
+          setSuccessMessage('');
+        }, 3000);
+      } catch (err) {
+        console.error('Error deleting CV:', err);
+        setError(handleAPIError(err));
+      }
+    }
   };
 
   const handleViewCv = async () => {
@@ -221,9 +239,9 @@ const CandidateForm = () => {
       try {
         const response = await candidatesAPI.downloadCandidateCv(id);
         
-        // Get file extension from response headers
+        // Get filename from response headers
         const contentDisposition = response.headers['content-disposition'];
-        let filename = `${formData.first_name}_${formData.last_name}_CV`; // fallback without extension
+        let filename = `${formData.first_name}_${formData.last_name}_CV`; // fallback
         
         if (contentDisposition) {
           const filenameMatch = contentDisposition.match(/filename="(.+)"/);
@@ -232,51 +250,20 @@ const CandidateForm = () => {
           }
         }
         
-        console.log('Download filename:', filename);
+        console.log('Download filename from backend:', filename);
         
-        // Determine blob type based on filename extension
-        let fileExtension = filename.split('.').pop().toLowerCase();
-        const mimeTypeMap = {
-          'pdf': 'application/pdf',
-          'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          'doc': 'application/msword',
-          'txt': 'text/plain'
-        };
-        
-        // If no extension in filename, try to determine from response content-type
-        if (fileExtension === filename || fileExtension.length > 4) {
-          const contentType = response.headers['content-type'];
-          console.log('Content-Type from response:', contentType);
-          if (contentType) {
-            if (contentType.includes('pdf')) {
-              fileExtension = 'pdf';
-            } else if (contentType.includes('docx')) {
-              fileExtension = 'docx';
-            } else if (contentType.includes('doc')) {
-              fileExtension = 'doc';
-            } else {
-              fileExtension = 'pdf'; // default fallback
-            }
-            filename = `${formData.first_name}_${formData.last_name}_CV.${fileExtension}`;
-          }
-        }
-        
-        console.log('Final filename:', filename);
-        console.log('Final file extension:', fileExtension);
-        
-        const mimeType = mimeTypeMap[fileExtension] || 'application/octet-stream';
-        
-        console.log('File extension:', fileExtension);
-        console.log('MIME type:', mimeType);
+        // Get MIME type from response headers
+        const contentType = response.headers['content-type'] || 'application/octet-stream';
+        console.log('Content-Type from backend:', contentType);
         
         // Create blob with correct MIME type
-        const blob = new Blob([response.data], { type: mimeType });
+        const blob = new Blob([response.data], { type: contentType });
         
-        // Single download method
+        // Create download link
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = filename; // Explicit filename with extension
+        link.download = filename; // Use filename from backend
         link.style.display = 'none';
         
         // Add to DOM and trigger download
@@ -320,6 +307,16 @@ const CandidateForm = () => {
       if (isEdit) {
         response = await candidatesAPI.updateCandidate(id, formDataToSend);
         setSuccessMessage('Aday bilgileri başarıyla güncellendi!');
+        
+        // If CV was uploaded, update the UI state
+        if (cvFile && response.data.cv_file_path) {
+          setExistingCv({
+            path: response.data.cv_file_path,
+            name: response.data.cv_file_path.split('/').pop() || 'CV.pdf'
+          });
+          setShowCvUpload(false);
+          setCvFile(null);
+        }
       } else {
         response = await candidatesAPI.createCandidate(formDataToSend);
         setSuccessMessage('Aday başarıyla eklendi!');
@@ -586,12 +583,12 @@ const CandidateForm = () => {
               {/* CV Yönetimi */}
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  CV Yönetimi
+                  Aday CV Dosyası
                 </label>
                 
                 {/* Mevcut CV Gösterimi */}
                 {existingCv && !showCvUpload && (
-                  <div className="mt-1 p-4 bg-gray-50 border border-gray-200 rounded-md">
+                  <div className="mt-1 p-4 bg-white border border-gray-200 rounded-md shadow-sm">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <span className="material-symbols-outlined text-2xl text-gray-500">
@@ -599,35 +596,37 @@ const CandidateForm = () => {
                         </span>
                         <div>
                           <p className="text-sm font-medium text-gray-900">{existingCv.name}</p>
-                          <p className="text-xs text-gray-500">Mevcut CV dosyası</p>
+                          <p className="text-sm text-gray-500 capitalize">
+                            {existingCv.name.split('.').pop()?.toLowerCase() || 'dosya'} dosyası
+                          </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center space-x-2">
                         {existingCv.path && existingCv.path.toLowerCase().endsWith('.pdf') && (
                           <button
                             type="button"
                             onClick={handleViewCv}
-                            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
+                            className="text-blue-600 hover:text-blue-800 p-1"
+                            title="Görüntüle"
                           >
                             <span className="material-symbols-outlined text-sm">visibility</span>
-                            Görüntüle
                           </button>
                         )}
                         <button
                           type="button"
                           onClick={handleDownloadCv}
-                          className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
+                          className="text-green-600 hover:text-green-800 p-1"
+                          title="İndir"
                         >
                           <span className="material-symbols-outlined text-sm">download</span>
-                          İndir
                         </button>
                         <button
                           type="button"
                           onClick={handleRemoveCv}
-                          className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 border border-red-300 rounded hover:bg-red-100"
+                          className="text-red-600 hover:text-red-800 p-1"
+                          title="Sil"
                         >
                           <span className="material-symbols-outlined text-sm">delete</span>
-                          Sil
                         </button>
                       </div>
                     </div>
@@ -638,11 +637,21 @@ const CandidateForm = () => {
                 {showCvUpload && (
                   <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
                     <div className="space-y-1 text-center">
-                      <span className="material-symbols-outlined text-6xl text-gray-400">
-                        cloud_upload
-                      </span>
+                      <svg
+                        className="mx-auto h-12 w-12 text-gray-400"
+                        stroke="currentColor"
+                        fill="none"
+                        viewBox="0 0 48 48"
+                      >
+                        <path
+                          d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                        />
+                      </svg>
                       <div className="flex text-sm text-gray-600">
-                        <label className="relative cursor-pointer bg-white rounded-md font-medium text-[#137fec] hover:text-blue-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-[#137fec]" htmlFor="cv_file">
+                        <label className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500" htmlFor="cv_file">
                           <span>Dosya yükle</span>
                           <input
                             className="sr-only"
@@ -655,7 +664,9 @@ const CandidateForm = () => {
                         </label>
                         <p className="pl-1">veya sürükleyip bırakın</p>
                       </div>
-                      <p className="text-xs text-gray-500">PDF, DOC, DOCX 10MB'a kadar</p>
+                      <p className="text-xs text-gray-500">
+                        PDF, DOC, DOCX up to 10MB
+                      </p>
                       {cvFile && (
                         <p className="text-sm text-green-600 font-medium">
                           Seçilen dosya: {cvFile.name}

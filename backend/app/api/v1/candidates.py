@@ -615,6 +615,35 @@ async def view_candidate_cv(candidate_id: int, db: Session = Depends(get_db)):
         print(f"Error viewing CV for candidate {candidate_id}: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
+@router.delete("/{candidate_id}/cv")
+async def delete_candidate_cv(candidate_id: int, db: Session = Depends(get_db)):
+    """Delete CV file for candidate"""
+    try:
+        candidate = db.query(Candidate).filter(
+            and_(Candidate.id == candidate_id, Candidate.is_active == True)
+        ).first()
+        
+        if not candidate:
+            raise HTTPException(status_code=404, detail="Candidate not found")
+        
+        if not candidate.cv_file_path:
+            raise HTTPException(status_code=404, detail="CV file not found")
+        
+        # Clear CV file path
+        candidate.cv_file_path = None
+        candidate.updated_at = datetime.utcnow()
+        
+        db.commit()
+        
+        return {"message": "CV file deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error deleting CV for candidate {candidate_id}: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Internal server error")
+
 @router.get("/{candidate_id}/interviews", response_model=List[InterviewResponse])
 async def get_candidate_interviews(candidate_id: int, db: Session = Depends(get_db)):
     """Get interviews for a specific candidate"""

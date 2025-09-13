@@ -242,6 +242,10 @@ export const candidatesAPI = {
       responseType: 'blob'
     }),
 
+  // Delete candidate CV
+  deleteCandidateCv: (candidateId) => 
+    api.delete(`/candidates/${candidateId}/cv`),
+
   // Search candidates
   searchCandidates: (searchTerm, limit = 20) => 
     api.get('/candidates/search', { 
