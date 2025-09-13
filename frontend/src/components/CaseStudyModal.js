@@ -5,6 +5,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import CandidateSearchModal from './CandidateSearchModal';
 
 const CaseStudyModal = ({ caseStudy, onClose, onSave }) => {
+  const isViewOnly = caseStudy?.viewOnly || false;
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -296,7 +297,7 @@ const CaseStudyModal = ({ caseStudy, onClose, onSave }) => {
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">
-            {caseStudy ? 'Vaka Çalışmasını Düzenle' : 'Yeni Vaka Çalışması Ata'}
+            {isViewOnly ? 'Vaka Çalışmasını Görüntüle' : (caseStudy ? 'Vaka Çalışmasını Düzenle' : 'Yeni Vaka Çalışması Ata')}
           </h2>
           <button
             onClick={onClose}
@@ -324,15 +325,17 @@ const CaseStudyModal = ({ caseStudy, onClose, onSave }) => {
                 readOnly
                 className={`flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                   errors.candidate ? 'border-red-500' : ''
-                }`}
+                } ${isViewOnly ? 'bg-gray-50' : ''}`}
               />
-              <button
-                type="button"
-                onClick={() => setShowCandidateSearch(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-              >
-                <span className="material-symbols-outlined text-sm">search</span>
-              </button>
+              {!isViewOnly && (
+                <button
+                  type="button"
+                  onClick={() => setShowCandidateSearch(true)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-sm">search</span>
+                </button>
+              )}
             </div>
             {errors.candidate && (
               <p className="mt-1 text-sm text-red-600">{errors.candidate}</p>
@@ -348,9 +351,10 @@ const CaseStudyModal = ({ caseStudy, onClose, onSave }) => {
               type="text"
               value={formData.title}
               onChange={(e) => handleInputChange('title', e.target.value)}
+              readOnly={isViewOnly}
               className={`w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                 errors.title ? 'border-red-500' : ''
-              }`}
+              } ${isViewOnly ? 'bg-gray-50' : ''}`}
               placeholder="Örn: Frontend Geliştirici Rolü İçin Tasarım"
             />
             {errors.title && (
@@ -368,7 +372,8 @@ const CaseStudyModal = ({ caseStudy, onClose, onSave }) => {
               onChange={(e) => handleInputChange('description', e.target.value)}
               placeholder="Vaka çalışması ile ilgili detaylı açıklamaları buraya yazın."
               rows="4"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+              readOnly={isViewOnly}
+              className={`w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none ${isViewOnly ? 'bg-gray-50' : ''}`}
             />
           </div>
 
@@ -382,9 +387,10 @@ const CaseStudyModal = ({ caseStudy, onClose, onSave }) => {
                 selected={formData.due_date}
                 onChange={(date) => handleInputChange('due_date', date)}
                 dateFormat="dd.MM.yyyy"
+                readOnly={isViewOnly}
                 className={`w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                   errors.due_date ? 'border-red-500' : ''
-                }`}
+                } ${isViewOnly ? 'bg-gray-50' : ''}`}
                 placeholderText="Tarih seçin"
                 showTimeSelect={false}
                 locale="tr"
@@ -401,7 +407,8 @@ const CaseStudyModal = ({ caseStudy, onClose, onSave }) => {
               <select
                 value={formData.status}
                 onChange={(e) => handleInputChange('status', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-[42px]"
+                disabled={isViewOnly}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-[42px] ${isViewOnly ? 'bg-gray-50' : ''}`}
               >
                 {statusOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -422,15 +429,17 @@ const CaseStudyModal = ({ caseStudy, onClose, onSave }) => {
               onChange={(e) => handleInputChange('notes', e.target.value)}
               placeholder="Ek notlar..."
               rows="3"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+              readOnly={isViewOnly}
+              className={`w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none ${isViewOnly ? 'bg-gray-50' : ''}`}
             />
           </div>
 
           {/* Dosya Yükleme */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Vaka Çalışması Dosyası
-            </label>
+          {!isViewOnly && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Vaka Çalışması Dosyası
+              </label>
             
             {uploadedFile ? (
               // Show uploaded file
@@ -521,26 +530,91 @@ const CaseStudyModal = ({ caseStudy, onClose, onSave }) => {
                 </div>
               </div>
             )}
-          </div>
+            </div>
+          )}
+
+          {/* Dosya Görüntüleme (View Only) */}
+          {isViewOnly && uploadedFile && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Vaka Çalışması Dosyası
+              </label>
+              <div className="mt-1 p-4 border border-gray-300 rounded-md bg-gray-50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex-shrink-0">
+                      {uploadedFile.type === 'pdf' ? (
+                        <span className="material-symbols-outlined text-red-500 text-2xl">picture_as_pdf</span>
+                      ) : uploadedFile.type === 'doc' || uploadedFile.type === 'docx' ? (
+                        <span className="material-symbols-outlined text-blue-500 text-2xl">description</span>
+                      ) : (
+                        <span className="material-symbols-outlined text-gray-500 text-2xl">insert_drive_file</span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {uploadedFile.name}
+                      </p>
+                      <p className="text-sm text-gray-500 capitalize">
+                        {uploadedFile.type} dosyası
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    {uploadedFile.type === 'pdf' && (
+                      <button
+                        type="button"
+                        onClick={handleFileView}
+                        className="text-blue-600 hover:text-blue-800 p-1"
+                        title="Görüntüle"
+                      >
+                        <span className="material-symbols-outlined text-sm">visibility</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleFileDownload}
+                      className="text-green-600 hover:text-green-800 p-1"
+                      title="İndir"
+                    >
+                      <span className="material-symbols-outlined text-sm">download</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </form>
 
         {/* Footer */}
         <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            İptal
-          </button>
-          <button
-            type="submit"
-            form="case-study-form"
-            disabled={loading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-          >
-            {loading ? 'Kaydediliyor...' : (caseStudy ? 'Güncelle' : 'Oluştur')}
-          </button>
+          {isViewOnly ? (
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Kapat
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                İptal
+              </button>
+              <button
+                type="submit"
+                form="case-study-form"
+                disabled={loading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              >
+                {loading ? 'Kaydediliyor...' : (caseStudy ? 'Güncelle' : 'Oluştur')}
+              </button>
+            </>
+          )}
         </div>
       </div>
 

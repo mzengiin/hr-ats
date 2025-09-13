@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import CaseStudyModal from './CaseStudyModal';
+import DeleteConfirmModal from './DeleteConfirmModal';
 
 const CaseStudyList = () => {
   const [caseStudies, setCaseStudies] = useState([]);
@@ -14,6 +15,9 @@ const CaseStudyList = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [editingCaseStudy, setEditingCaseStudy] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingCaseStudy, setDeletingCaseStudy] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Status options
   const statusOptions = [
@@ -126,6 +130,55 @@ const CaseStudyList = () => {
   const handleEditCaseStudy = (caseStudy) => {
     setEditingCaseStudy(caseStudy);
     setShowModal(true);
+  };
+
+  // Handle view case study
+  const handleViewCaseStudy = (caseStudy) => {
+    setEditingCaseStudy({...caseStudy, viewOnly: true});
+    setShowModal(true);
+  };
+
+  // Handle delete case study
+  const handleDeleteCaseStudy = (caseStudy) => {
+    setDeletingCaseStudy(caseStudy);
+    setShowDeleteModal(true);
+  };
+
+  // Confirm delete case study
+  const confirmDeleteCaseStudy = async () => {
+    if (!deletingCaseStudy) return;
+
+    setDeleteLoading(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`http://localhost:8001/api/v1/case-studies/${deletingCaseStudy.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete case study');
+      }
+
+      // Refresh the list
+      fetchCaseStudies();
+      setShowDeleteModal(false);
+      setDeletingCaseStudy(null);
+    } catch (error) {
+      console.error('Error deleting case study:', error);
+      alert('Vaka çalışması silinirken bir hata oluştu.');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  // Cancel delete
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setDeletingCaseStudy(null);
   };
 
   // Handle modal close
@@ -293,7 +346,7 @@ const CaseStudyList = () => {
                     </div>
                   </th>
                   <th className="px-6 py-4 text-sm font-semibold text-gray-600 text-center">
-                    Eylemler
+                    İşlemler
                   </th>
                 </tr>
               </thead>
@@ -324,18 +377,25 @@ const CaseStudyList = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
                         <div className="flex items-center justify-center space-x-2">
                           <button
-                            onClick={() => handleEditCaseStudy(caseStudy)}
+                            onClick={() => handleViewCaseStudy(caseStudy)}
                             className="text-blue-600 hover:text-blue-800 p-1"
-                            title="Not Ekle"
+                            title="Görüntüle"
                           >
-                            <span className="material-symbols-outlined text-sm">note_add</span>
+                            <span className="material-symbols-outlined text-sm">visibility</span>
                           </button>
                           <button
                             onClick={() => handleEditCaseStudy(caseStudy)}
                             className="text-green-600 hover:text-green-800 p-1"
-                            title="Görüntüle"
+                            title="Düzenle"
                           >
-                            <span className="material-symbols-outlined text-sm">visibility</span>
+                            <span className="material-symbols-outlined text-sm">edit</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCaseStudy(caseStudy)}
+                            className="text-red-600 hover:text-red-800 p-1"
+                            title="Sil"
+                          >
+                            <span className="material-symbols-outlined text-sm">delete</span>
                           </button>
                         </div>
                       </td>
@@ -381,6 +441,17 @@ const CaseStudyList = () => {
           onSave={fetchCaseStudies}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={cancelDelete}
+        onConfirm={confirmDeleteCaseStudy}
+        title="Vaka Çalışmasını Sil"
+        message={`"${deletingCaseStudy?.title}" vaka çalışmasını silmek istediğinizden emin misiniz?`}
+        itemName={deletingCaseStudy?.title}
+        isLoading={deleteLoading}
+      />
     </div>
   );
 };

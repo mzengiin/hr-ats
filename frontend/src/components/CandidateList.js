@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { candidatesAPI, handleAPIError } from '../services/api';
 import { formatDateToDDMMYYYY } from '../utils/dateUtils';
+import DeleteConfirmModal from './DeleteConfirmModal';
 
 const CandidateList = () => {
   const [candidates, setCandidates] = useState([]);
@@ -22,6 +23,9 @@ const CandidateList = () => {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const searchInputRef = useRef(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingCandidate, setDeletingCandidate] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Load candidates function with useCallback
   const loadCandidates = useCallback(async (searchValue = searchTerm) => {
@@ -138,16 +142,34 @@ const CandidateList = () => {
     );
   };
 
-  const handleDeleteCandidate = async (candidateId) => {
-    if (window.confirm('Bu adayı silmek istediğinizden emin misiniz?')) {
-      try {
-        await candidatesAPI.deleteCandidate(candidateId);
-        loadCandidates();
-        setSelectedCandidates(prev => prev.filter(id => id !== candidateId));
-      } catch (err) {
-        setError(handleAPIError(err));
-      }
+  const handleDeleteCandidate = (candidateId) => {
+    const candidate = candidates.find(c => c.id === candidateId);
+    setDeletingCandidate(candidate);
+    setShowDeleteModal(true);
+  };
+
+  // Confirm delete candidate
+  const confirmDeleteCandidate = async () => {
+    if (!deletingCandidate) return;
+
+    setDeleteLoading(true);
+    try {
+      await candidatesAPI.deleteCandidate(deletingCandidate.id);
+      loadCandidates();
+      setSelectedCandidates(prev => prev.filter(id => id !== deletingCandidate.id));
+      setShowDeleteModal(false);
+      setDeletingCandidate(null);
+    } catch (err) {
+      setError(handleAPIError(err));
+    } finally {
+      setDeleteLoading(false);
     }
+  };
+
+  // Cancel delete
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setDeletingCandidate(null);
   };
 
   const getStatusColor = (status) => {
@@ -424,6 +446,17 @@ const CandidateList = () => {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={cancelDelete}
+        onConfirm={confirmDeleteCandidate}
+        title="Adayı Sil"
+        message={`"${deletingCandidate?.first_name} ${deletingCandidate?.last_name}" adayını silmek istediğinizden emin misiniz?`}
+        itemName={`${deletingCandidate?.first_name} ${deletingCandidate?.last_name}`}
+        isLoading={deleteLoading}
+      />
     </div>
   );
 };
