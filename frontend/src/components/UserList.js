@@ -1,73 +1,135 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import api from '../services/api';
+import { format } from 'date-fns';
+import { tr } from 'date-fns/locale';
 import UserForm from './UserForm';
 import DeleteConfirmModal from './DeleteConfirmModal';
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [itemsPerPage] = useState(10);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [editingUserId, setEditingUserId] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingUser, setDeletingUser] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // Fetch users function with useCallback
+  // Status options
+  const statusOptions = [
+    { value: '', label: 'Duruma Göre Filtrele' },
+    { value: 'active', label: 'Aktif' },
+    { value: 'inactive', label: 'Pasif' }
+  ];
+
+  // Sort options
+  const sortOptions = [
+    { value: 'created_at', label: 'Tarihe Göre Sırala' },
+    { value: 'full_name', label: 'İsme Göre' },
+    { value: 'email', label: 'E-postaya Göre' },
+    { value: 'last_login', label: 'Son Girişe Göre' }
+  ];
+
+  // Fetch users
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
-      setError(null);
-      const response = await api.get(`/users?page=${currentPage}&limit=${itemsPerPage}&search=${searchTerm}`);
+      const token = localStorage.getItem('access_token');
+      console.log('UserList - Token:', token ? 'Token exists' : 'No token');
       
-      if (response.data.success) {
-        setUsers(response.data.data.users);
-        setTotalPages(response.data.data.total_pages);
-      } else {
-        setError('Kullanıcılar yüklenirken hata oluştu');
+      if (!token) {
+        console.error('No token found in localStorage');
+        window.location.href = '/login';
+        return;
       }
+      
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        per_page: '10',
+        ...(searchTerm && { search: searchTerm }),
+        ...(statusFilter && { status: statusFilter }),
+        sort_by: sortBy,
+        sort_order: sortOrder
+      });
+
+      const response = await fetch(`http://localhost:8001/api/v1/users/?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
+
+      const data = await response.json();
+      setUsers(data.users);
+      setTotalPages(Math.ceil(data.total / 10));
     } catch (error) {
       console.error('Error fetching users:', error);
-      setError('Kullanıcılar yüklenirken hata oluştu');
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchTerm, itemsPerPage]);
+  }, [currentPage, searchTerm, statusFilter, sortBy, sortOrder]);
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
+  // Handle search
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
     setCurrentPage(1);
   };
 
-  const handleEdit = (userId) => {
-    setEditingUserId(userId);
-    setIsModalOpen(true);
+  // Handle status filter
+  const handleStatusFilter = (e) => {
+    setStatusFilter(e.target.value);
+    setCurrentPage(1);
   };
 
-  const handleAddNew = () => {
+  // Handle sort dropdown
+  const handleSortChange = (e) => {
+    setSortBy(e.target.value);
+    setCurrentPage(1);
+  };
+
+  // Handle sort order
+  const handleSortOrder = (e) => {
+    setSortOrder(e.target.value);
+    setCurrentPage(1);
+  };
+
+  // Handle column sorting
+  const handleSort = (column) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortOrder('asc');
+    }
+    setCurrentPage(1);
+  };
+
+  // Handle new user
+  const handleNewUser = () => {
     setEditingUserId(null);
-    setIsModalOpen(true);
+    setShowModal(true);
   };
 
-  const handleModalClose = () => {
-    setIsModalOpen(false);
-    setEditingUserId(null);
+  // Handle edit user
+  const handleEditUser = (user) => {
+    setEditingUserId(user.id);
+    setShowModal(true);
   };
 
-  const handleModalSuccess = () => {
-    fetchUsers();
-  };
-
-  const handleDelete = (userId) => {
-    const user = users.find(u => u.id === userId);
+  // Handle delete user
+  const handleDeleteUser = (user) => {
     setDeletingUser(user);
     setShowDeleteModal(true);
   };
@@ -78,17 +140,26 @@ const UserList = () => {
 
     setDeleteLoading(true);
     try {
-      const response = await api.delete(`/users/${deletingUser.id}`);
-      if (response.data.success) {
-        fetchUsers();
-        setShowDeleteModal(false);
-        setDeletingUser(null);
-      } else {
-        alert('Kullanıcı silinirken hata oluştu');
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`http://localhost:8001/api/v1/users/${deletingUser.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete user');
       }
+
+      // Refresh the list
+      fetchUsers();
+      setShowDeleteModal(false);
+      setDeletingUser(null);
     } catch (error) {
       console.error('Error deleting user:', error);
-      alert('Kullanıcı silinirken hata oluştu');
+      alert('Kullanıcı silinirken bir hata oluştu.');
     } finally {
       setDeleteLoading(false);
     }
@@ -100,82 +171,183 @@ const UserList = () => {
     setDeletingUser(null);
   };
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
+  // Handle modal close
+  const handleModalClose = () => {
+    setShowModal(false);
+    setEditingUserId(null);
+    fetchUsers();
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#137fec]"></div>
-      </div>
-    );
-  }
+  // Get status badge class
+  const getStatusBadgeClass = (isActive) => {
+    return isActive 
+      ? 'bg-green-100 text-green-800' 
+      : 'bg-red-100 text-red-800';
+  };
+
+  // Format date
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Hiç giriş yapmamış';
+    return format(new Date(dateString), 'dd.MM.yyyy HH:mm', { locale: tr });
+  };
 
   return (
-    <div className="bg-[#F8F9FA] min-h-screen">
-      <main className="p-8">
+    <div className="p-6 lg:p-8">
+      <div className="flex flex-col flex-1 bg-white rounded-xl shadow-sm border border-gray-200">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Kullanıcı Yönetimi</h1>
-            <p className="text-gray-600 mt-2">Sistem kullanıcılarını yönetin</p>
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex flex-wrap justify-between items-center gap-4">
+            <div className="flex flex-col gap-1">
+              <h2 className="text-2xl font-bold leading-tight tracking-[-0.015em]">
+                Kullanıcı Yönetimi
+              </h2>
+              <p className="text-gray-500 text-sm font-normal">
+                Sistem kullanıcılarını buradan yönetebilirsiniz.
+              </p>
+            </div>
+            <button
+              onClick={handleNewUser}
+              className="flex items-center justify-center gap-2 min-w-[84px] cursor-pointer overflow-hidden rounded-md h-12 px-6 bg-blue-600 text-white text-base font-bold leading-normal tracking-wide shadow-sm hover:bg-opacity-90 transition-colors"
+            >
+              <span className="material-symbols-outlined">add</span>
+              <span>Yeni Kullanıcı Ekle</span>
+            </button>
           </div>
-          <button
-            onClick={handleAddNew}
-            className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-[#137fec] rounded-lg shadow-sm hover:bg-blue-700 transition-colors"
-          >
-            <span className="material-symbols-outlined">add</span>
-            Yeni Kullanıcı Ekle
-          </button>
-        </div>
 
-        {/* Search and Filters */}
-        <div className="bg-white p-6 rounded-xl border border-gray-200 mb-6">
-          <div className="flex gap-4 items-center">
-            <div className="flex-1">
-              <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+          {/* Filters */}
+          <div className="mt-6 flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                <span className="material-symbols-outlined text-gray-400">
                   search
                 </span>
-                <input
-                  type="text"
-                  placeholder="Kullanıcı ara..."
-                  value={searchTerm}
-                  onChange={handleSearch}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#137fec] focus:border-transparent"
-                />
               </div>
+              <input
+                type="text"
+                placeholder="Kullanıcı ara..."
+                value={searchTerm}
+                onChange={handleSearch}
+                className="flex w-full min-w-0 rounded-md text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-gray-300 bg-white h-11 placeholder:text-gray-400 pl-10 pr-4 text-base font-normal"
+              />
+            </div>
+            <div className="flex gap-4">
+              <select
+                value={statusFilter}
+                onChange={handleStatusFilter}
+                className="flex w-full sm:w-auto min-w-0 rounded-md text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-gray-300 bg-white h-11 px-4 text-sm font-medium"
+              >
+                {statusOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={sortBy}
+                onChange={handleSortChange}
+                className="flex w-full sm:w-auto min-w-0 rounded-md text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-gray-300 bg-white h-11 px-4 text-sm font-medium"
+              >
+                {sortOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={sortOrder}
+                onChange={handleSortOrder}
+                className="flex w-full sm:w-auto min-w-0 rounded-md text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-gray-300 bg-white h-11 px-4 text-sm font-medium"
+              >
+                <option value="desc">En Yeni</option>
+                <option value="asc">En Eski</option>
+              </select>
             </div>
           </div>
         </div>
 
-        {/* Users Table */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-gray-50 text-gray-500 uppercase tracking-wider text-xs">
-                <tr>
-                  <th className="px-6 py-3" scope="col">Kullanıcı</th>
-                  <th className="px-6 py-3" scope="col">E-posta</th>
-                  <th className="px-6 py-3" scope="col">Telefon</th>
-                  <th className="px-6 py-3" scope="col">Rol</th>
-                  <th className="px-6 py-3" scope="col">Son Giriş</th>
-                  <th className="px-6 py-3" scope="col">Durum</th>
-                  <th className="px-6 py-3" scope="col">İşlemler</th>
+        {/* Table */}
+        <div className="overflow-x-auto">
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          ) : (
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th 
+                    className="px-6 py-4 text-sm font-semibold text-gray-600 cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('full_name')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Kullanıcı
+                      {sortBy === 'full_name' && (
+                        <span className="material-symbols-outlined text-sm">
+                          {sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    className="px-6 py-4 text-sm font-semibold text-gray-600 cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('email')}
+                  >
+                    <div className="flex items-center gap-1">
+                      E-posta
+                      {sortBy === 'email' && (
+                        <span className="material-symbols-outlined text-sm">
+                          {sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                  <th className="px-6 py-4 text-sm font-semibold text-gray-600">
+                    Telefon
+                  </th>
+                  <th className="px-6 py-4 text-sm font-semibold text-gray-600">
+                    Rol
+                  </th>
+                  <th 
+                    className="px-6 py-4 text-sm font-semibold text-gray-600 cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('last_login')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Son Giriş
+                      {sortBy === 'last_login' && (
+                        <span className="material-symbols-outlined text-sm">
+                          {sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    className="px-6 py-4 text-sm font-semibold text-gray-600 text-center cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('is_active')}
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      Durum
+                      {sortBy === 'is_active' && (
+                        <span className="material-symbols-outlined text-sm">
+                          {sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                  <th className="px-6 py-4 text-sm font-semibold text-gray-600 text-center">
+                    İşlemler
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {users.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
-                      <span className="material-symbols-outlined text-4xl text-gray-300 mb-4 block">person</span>
-                      <p>Henüz kullanıcı bulunmuyor</p>
+                    <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                      Henüz kullanıcı bulunmuyor.
                     </td>
                   </tr>
                 ) : (
                   users.map((user) => (
-                    <tr key={user.id} className="hover:bg-gray-50">
+                    <tr key={user.id}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="h-10 w-10 flex-shrink-0">
@@ -192,15 +364,15 @@ const UserList = () => {
                             )}
                           </div>
                           <div className="ml-4">
-                            <div className="font-medium text-gray-900">{user.full_name}</div>
-                            <div className="text-gray-500 text-sm">{user.first_name} {user.last_name}</div>
+                            <div className="text-sm font-medium text-gray-900">{user.full_name}</div>
+                            <div className="text-sm text-gray-500">{user.first_name} {user.last_name}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                         {user.email}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                         {user.phone || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -208,31 +380,29 @@ const UserList = () => {
                           {user.role?.name || 'Rol Atanmamış'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                        {user.last_login ? new Date(user.last_login).toLocaleDateString('tr-TR') : 'Hiç giriş yapmamış'}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {formatDate(user.last_login)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          user.is_active 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(user.is_active)}`}>
                           {user.is_active ? 'Aktif' : 'Pasif'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex gap-2">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
+                        <div className="flex items-center justify-center space-x-2">
                           <button
-                            onClick={() => handleEdit(user.id)}
-                            className="text-[#137fec] hover:text-blue-700 transition-colors"
+                            onClick={() => handleEditUser(user)}
+                            className="text-green-600 hover:text-green-800 p-1"
+                            title="Düzenle"
                           >
-                            <span className="material-symbols-outlined text-lg">edit</span>
+                            <span className="material-symbols-outlined text-sm">edit</span>
                           </button>
                           <button
-                            onClick={() => handleDelete(user.id)}
-                            className="text-red-600 hover:text-red-700 transition-colors"
+                            onClick={() => handleDeleteUser(user)}
+                            className="text-red-600 hover:text-red-800 p-1"
+                            title="Sil"
                           >
-                            <span className="material-symbols-outlined text-lg">delete</span>
+                            <span className="material-symbols-outlined text-sm">delete</span>
                           </button>
                         </div>
                       </td>
@@ -241,88 +411,55 @@ const UserList = () => {
                 )}
               </tbody>
             </table>
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-              <div className="flex-1 flex justify-between sm:hidden">
-                <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Önceki
-                </button>
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Sonraki
-                </button>
-              </div>
-              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-gray-700">
-                    Sayfa <span className="font-medium">{currentPage}</span> / <span className="font-medium">{totalPages}</span>
-                  </p>
-                </div>
-                <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                    <button
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1}
-                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <span className="material-symbols-outlined">chevron_left</span>
-                    </button>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <button
-                        key={page}
-                        onClick={() => handlePageChange(page)}
-                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                          page === currentPage
-                            ? 'z-10 bg-[#137fec] border-[#137fec] text-white'
-                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    ))}
-                    <button
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <span className="material-symbols-outlined">chevron_right</span>
-                    </button>
-                  </nav>
-                </div>
-              </div>
-            </div>
           )}
         </div>
 
-        {/* User Form Modal */}
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="px-6 py-4 border-t border-gray-200 flex justify-between items-center">
+            <div className="text-sm text-gray-500">
+              Sayfa {currentPage} / {totalPages}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Önceki
+              </button>
+              <button
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Sonraki
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Modal */}
+      {showModal && (
         <UserForm
-          isOpen={isModalOpen}
+          isOpen={showModal}
           onClose={handleModalClose}
           userId={editingUserId}
-          onSuccess={handleModalSuccess}
+          onSuccess={fetchUsers}
         />
+      )}
 
-        {/* Delete Confirmation Modal */}
-        <DeleteConfirmModal
-          isOpen={showDeleteModal}
-          onClose={cancelDelete}
-          onConfirm={confirmDeleteUser}
-          title="Kullanıcıyı Sil"
-          message={`"${deletingUser?.full_name || deletingUser?.first_name + ' ' + deletingUser?.last_name}" kullanıcısını silmek istediğinizden emin misiniz?`}
-          itemName={deletingUser?.full_name || `${deletingUser?.first_name} ${deletingUser?.last_name}`}
-          isLoading={deleteLoading}
-        />
-      </main>
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={cancelDelete}
+        onConfirm={confirmDeleteUser}
+        title="Kullanıcıyı Sil"
+        message={`"${deletingUser?.full_name || deletingUser?.first_name + ' ' + deletingUser?.last_name}" kullanıcısını silmek istediğinizden emin misiniz?`}
+        itemName={deletingUser?.full_name || `${deletingUser?.first_name} ${deletingUser?.last_name}`}
+        isLoading={deleteLoading}
+      />
     </div>
   );
 };
