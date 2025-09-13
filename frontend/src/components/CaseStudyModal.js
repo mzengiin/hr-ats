@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import CandidateSearchModal from './CandidateSearchModal';
+import DeleteConfirmModal from './DeleteConfirmModal';
 
 const CaseStudyModal = ({ caseStudy, onClose, onSave }) => {
   const isViewOnly = caseStudy?.viewOnly || false;
@@ -20,6 +21,8 @@ const CaseStudyModal = ({ caseStudy, onClose, onSave }) => {
   const [showCandidateSearch, setShowCandidateSearch] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [fileLoading, setFileLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Status options
   const statusOptions = [
@@ -258,30 +261,41 @@ const CaseStudyModal = ({ caseStudy, onClose, onSave }) => {
   };
 
   // Handle file delete
-  const handleFileDelete = async () => {
+  const handleFileDelete = () => {
     if (!uploadedFile || !caseStudy) return;
+    setShowDeleteModal(true);
+  };
 
-    if (window.confirm('Dosyayı silmek istediğinizden emin misiniz?')) {
-      try {
-        const token = localStorage.getItem('access_token');
-        const response = await fetch(`http://localhost:8001/api/v1/case-studies/${caseStudy.id}/file`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to delete file');
+  // Confirm delete file
+  const confirmDeleteFile = async () => {
+    setDeleteLoading(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`http://localhost:8001/api/v1/case-studies/${caseStudy.id}/file`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
+      });
 
-        setUploadedFile(null);
-        alert('Dosya başarıyla silindi.');
-      } catch (error) {
-        console.error('Error deleting file:', error);
-        alert('Dosya silinirken hata oluştu.');
+      if (!response.ok) {
+        throw new Error('Failed to delete file');
       }
+
+      setUploadedFile(null);
+      setShowDeleteModal(false);
+      alert('Dosya başarıyla silindi.');
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      alert('Dosya silinirken hata oluştu.');
+    } finally {
+      setDeleteLoading(false);
     }
+  };
+
+  // Cancel delete
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
   };
 
   // Handle file view (for PDF)
@@ -623,6 +637,17 @@ const CaseStudyModal = ({ caseStudy, onClose, onSave }) => {
         isOpen={showCandidateSearch}
         onClose={() => setShowCandidateSearch(false)}
         onSelect={handleCandidateSelect}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={cancelDelete}
+        onConfirm={confirmDeleteFile}
+        title="Dosyayı Sil"
+        message="Dosyayı silmek istediğinizden emin misiniz?"
+        itemName="dosya"
+        isLoading={deleteLoading}
       />
     </div>
   );

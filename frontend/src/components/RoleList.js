@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import RoleForm from './RoleForm';
+import DeleteConfirmModal from './DeleteConfirmModal';
 
 const RoleList = () => {
   const [roles, setRoles] = useState([]);
@@ -12,6 +13,9 @@ const RoleList = () => {
   const [itemsPerPage] = useState(10);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRoleId, setEditingRoleId] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingRole, setDeletingRole] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     fetchRoles();
@@ -60,20 +64,38 @@ const RoleList = () => {
     fetchRoles();
   };
 
-  const handleDelete = async (roleId) => {
-    if (window.confirm('Bu rolü silmek istediğinizden emin misiniz?')) {
-      try {
-        const response = await api.delete(`/roles/${roleId}`);
-        if (response.data.success) {
-          fetchRoles();
-        } else {
-          alert('Rol silinirken hata oluştu');
-        }
-      } catch (error) {
-        console.error('Error deleting role:', error);
+  const handleDelete = (roleId) => {
+    const role = roles.find(r => r.id === roleId);
+    setDeletingRole(role);
+    setShowDeleteModal(true);
+  };
+
+  // Confirm delete role
+  const confirmDeleteRole = async () => {
+    if (!deletingRole) return;
+
+    setDeleteLoading(true);
+    try {
+      const response = await api.delete(`/roles/${deletingRole.id}`);
+      if (response.data.success) {
+        fetchRoles();
+        setShowDeleteModal(false);
+        setDeletingRole(null);
+      } else {
         alert('Rol silinirken hata oluştu');
       }
+    } catch (error) {
+      console.error('Error deleting role:', error);
+      alert('Rol silinirken hata oluştu');
+    } finally {
+      setDeleteLoading(false);
     }
+  };
+
+  // Cancel delete
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setDeletingRole(null);
   };
 
   const handlePageChange = (page) => {
@@ -270,6 +292,17 @@ const RoleList = () => {
           onClose={handleModalClose}
           roleId={editingRoleId}
           onSuccess={handleModalSuccess}
+        />
+
+        {/* Delete Confirmation Modal */}
+        <DeleteConfirmModal
+          isOpen={showDeleteModal}
+          onClose={cancelDelete}
+          onConfirm={confirmDeleteRole}
+          title="Rolü Sil"
+          message={`"${deletingRole?.name}" rolünü silmek istediğinizden emin misiniz?`}
+          itemName={deletingRole?.name}
+          isLoading={deleteLoading}
         />
       </main>
     </div>

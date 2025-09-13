@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import UserForm from './UserForm';
+import DeleteConfirmModal from './DeleteConfirmModal';
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
@@ -12,6 +13,9 @@ const UserList = () => {
   const [itemsPerPage] = useState(10);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUserId, setEditingUserId] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingUser, setDeletingUser] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -60,20 +64,38 @@ const UserList = () => {
     fetchUsers();
   };
 
-  const handleDelete = async (userId) => {
-    if (window.confirm('Bu kullanıcıyı silmek istediğinizden emin misiniz?')) {
-      try {
-        const response = await api.delete(`/users/${userId}`);
-        if (response.data.success) {
-          fetchUsers();
-        } else {
-          alert('Kullanıcı silinirken hata oluştu');
-        }
-      } catch (error) {
-        console.error('Error deleting user:', error);
+  const handleDelete = (userId) => {
+    const user = users.find(u => u.id === userId);
+    setDeletingUser(user);
+    setShowDeleteModal(true);
+  };
+
+  // Confirm delete user
+  const confirmDeleteUser = async () => {
+    if (!deletingUser) return;
+
+    setDeleteLoading(true);
+    try {
+      const response = await api.delete(`/users/${deletingUser.id}`);
+      if (response.data.success) {
+        fetchUsers();
+        setShowDeleteModal(false);
+        setDeletingUser(null);
+      } else {
         alert('Kullanıcı silinirken hata oluştu');
       }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      alert('Kullanıcı silinirken hata oluştu');
+    } finally {
+      setDeleteLoading(false);
     }
+  };
+
+  // Cancel delete
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setDeletingUser(null);
   };
 
   const handlePageChange = (page) => {
@@ -286,6 +308,17 @@ const UserList = () => {
           onClose={handleModalClose}
           userId={editingUserId}
           onSuccess={handleModalSuccess}
+        />
+
+        {/* Delete Confirmation Modal */}
+        <DeleteConfirmModal
+          isOpen={showDeleteModal}
+          onClose={cancelDelete}
+          onConfirm={confirmDeleteUser}
+          title="Kullanıcıyı Sil"
+          message={`"${deletingUser?.full_name || deletingUser?.first_name + ' ' + deletingUser?.last_name}" kullanıcısını silmek istediğinizden emin misiniz?`}
+          itemName={deletingUser?.full_name || `${deletingUser?.first_name} ${deletingUser?.last_name}`}
+          isLoading={deleteLoading}
         />
       </main>
     </div>

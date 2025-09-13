@@ -7,6 +7,7 @@ import { registerLocale, setDefaultLocale } from 'react-datepicker';
 import { tr } from 'date-fns/locale';
 import { candidatesAPI, handleAPIError } from '../services/api';
 import { formatDateToDDMMYYYY, formatDateToYYYYMMDD, parseDDMMYYYY } from '../utils/dateUtils';
+import DeleteConfirmModal from './DeleteConfirmModal';
 
 // Register Turkish locale
 registerLocale('tr', tr);
@@ -46,6 +47,8 @@ const CandidateForm = () => {
     statuses: [],
     hrSpecialists: []
   });
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Load options and existing data
   useEffect(() => {
@@ -206,28 +209,40 @@ const CandidateForm = () => {
     }
   };
 
-  const handleRemoveCv = async () => {
-    if (window.confirm('CV dosyasını silmek istediğinizden emin misiniz?')) {
-      try {
-        if (id && existingCv) {
-          // Delete from backend
-          await candidatesAPI.deleteCandidateCv(id);
-        }
-        setExistingCv(null);
-        setCvFile(null);
-        setShowCvUpload(true);
-        setError(null);
-        setSuccessMessage('CV dosyası başarıyla silindi.');
-        
-        // Clear success message after 3 seconds
-        setTimeout(() => {
-          setSuccessMessage('');
-        }, 3000);
-      } catch (err) {
-        console.error('Error deleting CV:', err);
-        setError(handleAPIError(err));
+  const handleRemoveCv = () => {
+    setShowDeleteModal(true);
+  };
+
+  // Confirm delete CV
+  const confirmDeleteCv = async () => {
+    setDeleteLoading(true);
+    try {
+      if (id && existingCv) {
+        // Delete from backend
+        await candidatesAPI.deleteCandidateCv(id);
       }
+      setExistingCv(null);
+      setCvFile(null);
+      setShowCvUpload(true);
+      setError(null);
+      setSuccessMessage('CV dosyası başarıyla silindi.');
+      setShowDeleteModal(false);
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccessMessage('');
+      }, 3000);
+    } catch (err) {
+      console.error('Error deleting CV:', err);
+      setError(handleAPIError(err));
+    } finally {
+      setDeleteLoading(false);
     }
+  };
+
+  // Cancel delete
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
   };
 
   const handleViewCv = async () => {
@@ -854,6 +869,17 @@ const CandidateForm = () => {
           </div>
         </div>
       </main>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={cancelDelete}
+        onConfirm={confirmDeleteCv}
+        title="CV Dosyasını Sil"
+        message="CV dosyasını silmek istediğinizden emin misiniz?"
+        itemName="CV dosyası"
+        isLoading={deleteLoading}
+      />
     </div>
   );
 };
