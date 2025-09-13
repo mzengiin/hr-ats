@@ -85,12 +85,14 @@ const LoginForm = () => {
     try {
       const result = await login(formData.email, formData.password);
       
-      if (result.success) {
+      if (result && result.success) {
         const from = location.state?.from?.pathname || '/dashboard';
         navigate(from, { replace: true });
       }
+      // Error state'i AuthContext'ten otomatik olarak gelecek
     } catch (error) {
       console.error('Login error:', error);
+      // Error state'i AuthContext'ten otomatik olarak gelecek
     } finally {
       setIsSubmitting(false);
     }
@@ -106,20 +108,19 @@ const LoginForm = () => {
 
   return (
     <div className="bg-gray-50 min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" style={{fontFamily: 'Plus Jakarta Sans, Noto Sans, sans-serif'}}>
-      <div className="max-w-md w-full space-y-8">
-        {/* Logo ve Başlık - Beyaz Çerçeve İçinde */}
-        <div className="bg-white rounded-lg p-8 shadow-lg text-center">
-          <img 
-            src="/logo.png" 
-            alt="IK-ATS Logo" 
-            className="mx-auto h-16 w-auto"
-          />
-          <h2 className="mt-6 text-3xl font-bold tracking-tight text-gray-900">IK-ATS'e Hoş Geldiniz</h2>
-          <p className="mt-2 text-sm text-gray-600">Lütfen hesabınıza giriş yapın</p>
-        </div>
-        
-        {/* Form - Beyaz Çerçeve İçinde */}
-        <div className="rounded-lg bg-white p-8 shadow-lg">
+      <div className="max-w-md w-full">
+        {/* Tek Beyaz Çerçeve - Logo, Başlık ve Form */}
+        <div className="bg-white rounded-lg p-8 shadow-lg">
+          {/* Logo ve Başlık */}
+          <div className="text-center mb-8">
+            <img 
+              src="/logo.png" 
+              alt="IK-ATS Logo" 
+              className="mx-auto h-16 w-auto"
+            />
+            <h2 className="mt-6 text-3xl font-bold tracking-tight text-gray-900">IK-ATS'e Hoş Geldiniz</h2>
+            <p className="mt-2 text-sm text-gray-600">Lütfen hesabınıza giriş yapın</p>
+          </div>
           {/* Error Banner */}
           {error && (
             <div className="mb-4 bg-red-50 border border-red-200 rounded-md p-4 flex items-center">
@@ -127,7 +128,7 @@ const LoginForm = () => {
                 <span className="material-symbols-outlined text-lg">error</span>
               </span>
               <span className="text-red-700 text-sm font-medium">
-                {error.includes('Invalid credentials') || error.includes('Unauthorized') 
+                {error.includes('Invalid credentials') || error.includes('Unauthorized') || error.includes('401') || error.includes('incorrect')
                   ? 'Kullanıcı adı veya şifre hatalı. Lütfen tekrar deneyin.' 
                   : error}
               </span>
