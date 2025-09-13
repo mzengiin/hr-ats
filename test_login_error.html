@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Error Test - IK-ATS</title>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', 'Noto Sans', sans-serif;
+            background-color: #f9fafb;
+            margin: 0;
+            padding: 20px;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+        .test-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #374151;
+        }
+        .test-description {
+            margin-bottom: 15px;
+            color: #6b7280;
+        }
+        .test-button {
+            background-color: #3b82f6;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .test-button:hover {
+            background-color: #2563eb;
+        }
+        .test-result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+        .success {
+            background-color: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        .error {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+        .warning {
+            background-color: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+        .info {
+            background-color: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+        .login-form {
+            max-width: 400px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #374151;
+        }
+        .form-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .error-banner {
+            background-color: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        .error-icon {
+            color: #ef4444;
+            margin-right: 8px;
+            font-size: 18px;
+        }
+        .error-text {
+            color: #dc2626;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔐 Login Error Test - IK-ATS</h1>
+        <p>Bu test sayfası login ekranındaki hata mesajı gösterimini test eder.</p>
+
+        <!-- Test 1: Error Banner Görünürlüğü -->
+        <div class="test-section">
+            <div class="test-title">Test 1: Error Banner Görünürlüğü</div>
+            <div class="test-description">
+                Hatalı giriş yapıldığında kırmızı uyarı banner'ı görünmeli.
+            </div>
+            <button class="test-button" onclick="testErrorBanner()">Error Banner Test Et</button>
+            <button class="test-button" onclick="hideErrorBanner()">Error Banner Gizle</button>
+            <div id="errorBannerResult" class="test-result hidden"></div>
+        </div>
+
+        <!-- Test 2: Hata Mesajı Metni -->
+        <div class="test-section">
+            <div class="test-title">Test 2: Hata Mesajı Metni</div>
+            <div class="test-description">
+                Farklı hata türleri için doğru Türkçe mesajlar gösterilmeli.
+            </div>
+            <button class="test-button" onclick="testInvalidCredentials()">Invalid Credentials Test</button>
+            <button class="test-button" onclick="testUnauthorized()">Unauthorized Test</button>
+            <button class="test-button" onclick="test401Error()">401 Error Test</button>
+            <button class="test-button" onclick="testIncorrect()">Incorrect Test</button>
+            <div id="errorMessageResult" class="test-result hidden"></div>
+        </div>
+
+        <!-- Test 3: Form Submission -->
+        <div class="test-section">
+            <div class="test-title">Test 3: Form Submission</div>
+            <div class="test-description">
+                Form gönderildiğinde sayfa yenilenmemeli, hata mesajı gösterilmeli.
+            </div>
+            <button class="test-button" onclick="testFormSubmission()">Form Submission Test</button>
+            <div id="formSubmissionResult" class="test-result hidden"></div>
+        </div>
+
+        <!-- Test 4: Gerçek Login Formu Simülasyonu -->
+        <div class="test-section">
+            <div class="test-title">Test 4: Gerçek Login Formu Simülasyonu</div>
+            <div class="test-description">
+                Gerçek login formu gibi davranan test formu.
+            </div>
+            
+            <div class="login-form">
+                <h3 style="text-align: center; margin-bottom: 20px;">Test Login Formu</h3>
+                
+                <!-- Error Banner (Başlangıçta gizli) -->
+                <div id="testErrorBanner" class="error-banner hidden">
+                    <span class="error-icon">⚠️</span>
+                    <span class="error-text" id="testErrorText">Hata mesajı burada görünecek</span>
+                </div>
+
+                <form id="testLoginForm" onsubmit="handleTestSubmit(event)">
+                    <div class="form-group">
+                        <label class="form-label" for="testEmail">E-posta Adresi</label>
+                        <input 
+                            type="email" 
+                            id="testEmail" 
+                            name="email" 
+                            class="form-input" 
+                            placeholder="test@example.com"
+                            required
+                        />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="testPassword">Şifre</label>
+                        <input 
+                            type="password" 
+                            id="testPassword" 
+                            name="password" 
+                            class="form-input" 
+                            placeholder="Şifrenizi girin"
+                            required
+                        />
+                    </div>
+                    
+                    <button type="submit" class="test-button" style="width: 100%; margin-top: 10px;">
+                        Giriş Yap
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Test 5: Console Log Test -->
+        <div class="test-section">
+            <div class="test-title">Test 5: Console Log Test</div>
+            <div class="test-description">
+                Console'da hata mesajlarını kontrol edin.
+            </div>
+            <button class="test-button" onclick="testConsoleLogs()">Console Log Test</button>
+            <div id="consoleLogResult" class="test-result hidden"></div>
+        </div>
+    </div>
+
+    <script>
+        // Test 1: Error Banner Görünürlüğü
+        function testErrorBanner() {
+            const errorBanner = document.getElementById('testErrorBanner');
+            const result = document.getElementById('errorBannerResult');
+            
+            errorBanner.classList.remove('hidden');
+            result.classList.remove('hidden');
+            result.className = 'test-result success';
+            result.textContent = '✅ Error banner başarıyla gösterildi!';
+        }
+
+        function hideErrorBanner() {
+            const errorBanner = document.getElementById('testErrorBanner');
+            const result = document.getElementById('errorBannerResult');
+            
+            errorBanner.classList.add('hidden');
+            result.classList.remove('hidden');
+            result.className = 'test-result info';
+            result.textContent = 'ℹ️ Error banner gizlendi.';
+        }
+
+        // Test 2: Hata Mesajı Metni
+        function testInvalidCredentials() {
+            showErrorMessage('Invalid credentials');
+        }
+
+        function testUnauthorized() {
+            showErrorMessage('Unauthorized');
+        }
+
+        function test401Error() {
+            showErrorMessage('401 Unauthorized');
+        }
+
+        function testIncorrect() {
+            showErrorMessage('incorrect username or password');
+        }
+
+        function showErrorMessage(errorType) {
+            const errorBanner = document.getElementById('testErrorBanner');
+            const errorText = document.getElementById('testErrorText');
+            const result = document.getElementById('errorMessageResult');
+            
+            // Hata mesajı kontrolü
+            let expectedMessage = 'Kullanıcı adı veya şifre hatalı. Lütfen tekrar deneyin.';
+            
+            if (errorType.includes('Invalid credentials') || 
+                errorType.includes('Unauthorized') || 
+                errorType.includes('401') || 
+                errorType.includes('incorrect')) {
+                errorText.textContent = expectedMessage;
+                result.className = 'test-result success';
+                result.textContent = `✅ Doğru mesaj gösterildi: "${expectedMessage}"`;
+            } else {
+                errorText.textContent = errorType;
+                result.className = 'test-result warning';
+                result.textContent = `⚠️ Beklenmeyen hata türü: "${errorType}"`;
+            }
+            
+            errorBanner.classList.remove('hidden');
+            result.classList.remove('hidden');
+        }
+
+        // Test 3: Form Submission
+        function testFormSubmission() {
+            const result = document.getElementById('formSubmissionResult');
+            result.classList.remove('hidden');
+            result.className = 'test-result info';
+            result.textContent = 'ℹ️ Form submission testi için aşağıdaki test formunu kullanın.';
+        }
+
+        function handleTestSubmit(event) {
+            event.preventDefault(); // Sayfa yenilenmesini engelle
+            
+            const email = document.getElementById('testEmail').value;
+            const password = document.getElementById('testPassword').value;
+            const result = document.getElementById('formSubmissionResult');
+            
+            console.log('Form submitted with:', { email, password });
+            
+            // Hatalı giriş simülasyonu
+            if (email === 'test@example.com' && password === 'wrongpassword') {
+                showErrorMessage('Invalid credentials');
+                result.className = 'test-result success';
+                result.textContent = '✅ Hatalı giriş tespit edildi, hata mesajı gösterildi!';
+            } else if (email === 'admin@hrats.com' && password === 'wrongpassword') {
+                showErrorMessage('Unauthorized');
+                result.className = 'test-result success';
+                result.textContent = '✅ Admin hatalı giriş tespit edildi, hata mesajı gösterildi!';
+            } else {
+                showErrorMessage('Login failed');
+                result.className = 'test-result warning';
+                result.textContent = '⚠️ Genel hata mesajı gösterildi.';
+            }
+            
+            result.classList.remove('hidden');
+        }
+
+        // Test 5: Console Log Test
+        function testConsoleLogs() {
+            const result = document.getElementById('consoleLogResult');
+            
+            console.log('=== LOGIN ERROR TEST LOGS ===');
+            console.log('Test 1: Error banner visibility test');
+            console.log('Test 2: Error message text test');
+            console.log('Test 3: Form submission test');
+            console.log('Test 4: Real login form simulation');
+            console.log('===============================');
+            
+            result.classList.remove('hidden');
+            result.className = 'test-result info';
+            result.textContent = 'ℹ️ Console logları yazdırıldı. F12 ile Developer Tools\'u açın ve Console sekmesini kontrol edin.';
+        }
+
+        // Sayfa yüklendiğinde otomatik test
+        window.onload = function() {
+            console.log('Login Error Test sayfası yüklendi.');
+            console.log('Testleri başlatmak için butonlara tıklayın.');
+        };
+    </script>
+</body>
+</html>

@@ -16,6 +16,11 @@ const LoginForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { login, error, clearError, isAuthenticated } = useAuth();
+
+  // Debug error state
+  useEffect(() => {
+    console.log('🔍 Error state changed:', error);
+  }, [error]);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -82,16 +87,23 @@ const LoginForm = () => {
     setIsSubmitting(true);
     clearError();
 
+    console.log('🔐 Login attempt started:', { email: formData.email });
+
     try {
       const result = await login(formData.email, formData.password);
       
+      console.log('🔐 Login result:', result);
+      
       if (result && result.success) {
+        console.log('✅ Login successful, navigating to dashboard');
         const from = location.state?.from?.pathname || '/dashboard';
         navigate(from, { replace: true });
+      } else {
+        console.log('❌ Login failed, result:', result);
       }
       // Error state'i AuthContext'ten otomatik olarak gelecek
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('❌ Login error:', error);
       // Error state'i AuthContext'ten otomatik olarak gelecek
     } finally {
       setIsSubmitting(false);
@@ -132,6 +144,13 @@ const LoginForm = () => {
                   ? 'Kullanıcı adı veya şifre hatalı. Lütfen tekrar deneyin.' 
                   : error}
               </span>
+            </div>
+          )}
+          
+          {/* Debug Info */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mb-4 bg-blue-50 border border-blue-200 rounded-md p-2 text-xs text-blue-700">
+              <strong>Debug:</strong> Error state: {error ? `"${error}"` : 'null'}
             </div>
           )}
 
