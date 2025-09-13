@@ -191,7 +191,19 @@ const DashboardNew = () => {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={false}
+                      label={({ status, count, percentage }) => (
+                        <text 
+                          x={0} 
+                          y={0} 
+                          textAnchor="middle" 
+                          dominantBaseline="central"
+                          fontSize="12"
+                          fontWeight="bold"
+                          fill="white"
+                        >
+                          {count}
+                        </text>
+                      )}
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="count"
@@ -209,14 +221,20 @@ const DashboardNew = () => {
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+              <div className="grid grid-cols-1 gap-y-3 text-sm">
                 {dashboardData.candidate_status_distribution?.map((item, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <span 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: item.color }}
-                    ></span>
-                    {item.status}
+                  <div key={index} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span 
+                        className="w-4 h-4 rounded-full" 
+                        style={{ backgroundColor: item.color }}
+                      ></span>
+                      <span className="font-medium text-gray-900">{item.status}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-gray-900">{item.count}</span>
+                      <span className="text-gray-500 text-xs">({item.percentage}%)</span>
+                    </div>
                   </div>
                 )) || []}
               </div>
