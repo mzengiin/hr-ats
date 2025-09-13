@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import RoleForm from './RoleForm';
 import DeleteConfirmModal from './DeleteConfirmModal';
@@ -17,13 +17,11 @@ const RoleList = () => {
   const [deletingRole, setDeletingRole] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  useEffect(() => {
-    fetchRoles();
-  }, [currentPage, searchTerm]);
-
-  const fetchRoles = async () => {
+  // Fetch roles function with useCallback
+  const fetchRoles = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await api.get(`/roles?page=${currentPage}&limit=${itemsPerPage}&search=${searchTerm}`);
       
       if (response.data.success) {
@@ -38,7 +36,11 @@ const RoleList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, searchTerm, itemsPerPage]);
+
+  useEffect(() => {
+    fetchRoles();
+  }, [fetchRoles]);
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);

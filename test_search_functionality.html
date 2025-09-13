@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Functionality Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin: 5px 0;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Search Functionality Test</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Input Focus Test</h2>
+        <p>Bu test, arama kutusuna yazarken focus'un korunup korunmadığını test eder.</p>
+        <input type="text" id="focusTest" class="test-input" placeholder="Focus test için yazın...">
+        <div id="focusStatus" class="status info">Focus durumu: Bekleniyor...</div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Debouncing Test</h2>
+        <p>Bu test, arama kutusuna yazarken gereksiz API çağrılarının yapılıp yapılmadığını test eder.</p>
+        <input type="text" id="debounceTest" class="test-input" placeholder="Debounce test için yazın...">
+        <div id="debounceStatus" class="status info">API çağrı sayısı: 0</div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Page Refresh Test</h2>
+        <p>Bu test, arama yaparken sayfanın yenilenip yenilenmediğini test eder.</p>
+        <input type="text" id="refreshTest" class="test-input" placeholder="Refresh test için yazın...">
+        <div id="refreshStatus" class="status info">Sayfa durumu: Bekleniyor...</div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 4: Cursor Position Test</h2>
+        <p>Bu test, arama yaparken cursor pozisyonunun korunup korunmadığını test eder.</p>
+        <input type="text" id="cursorTest" class="test-input" placeholder="Cursor test için yazın...">
+        <div id="cursorStatus" class="status info">Cursor pozisyonu: Bekleniyor...</div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Logları</h2>
+        <div id="testLog" class="log"></div>
+        <button class="test-button" onclick="clearLog()">Logları Temizle</button>
+    </div>
+
+    <script>
+        let apiCallCount = 0;
+        let pageLoadCount = 0;
+        let lastCursorPosition = 0;
+
+        // Test 1: Focus Test
+        const focusTest = document.getElementById('focusTest');
+        const focusStatus = document.getElementById('focusStatus');
+        
+        focusTest.addEventListener('focus', () => {
+            log('Focus test: Input focus oldu');
+            focusStatus.textContent = 'Focus durumu: ✅ Focus var';
+            focusStatus.className = 'status success';
+        });
+        
+        focusTest.addEventListener('blur', () => {
+            log('Focus test: Input focus kaybetti');
+            focusStatus.textContent = 'Focus durumu: ❌ Focus yok';
+            focusStatus.className = 'status error';
+        });
+
+        // Test 2: Debouncing Test
+        const debounceTest = document.getElementById('debounceTest');
+        const debounceStatus = document.getElementById('debounceStatus');
+        
+        debounceTest.addEventListener('input', () => {
+            apiCallCount++;
+            debounceStatus.textContent = `API çağrı sayısı: ${apiCallCount}`;
+            log(`Debounce test: API çağrısı #${apiCallCount} - "${debounceTest.value}"`);
+            
+            if (apiCallCount > 5) {
+                debounceStatus.textContent += ' - ⚠️ Çok fazla API çağrısı!';
+                debounceStatus.className = 'status error';
+            } else if (apiCallCount > 2) {
+                debounceStatus.className = 'status info';
+            }
+        });
+
+        // Test 3: Page Refresh Test
+        const refreshTest = document.getElementById('refreshTest');
+        const refreshStatus = document.getElementById('refreshStatus');
+        
+        // Sayfa yüklendiğinde sayacı artır
+        window.addEventListener('load', () => {
+            pageLoadCount++;
+            log(`Page refresh test: Sayfa yüklendi #${pageLoadCount}`);
+        });
+
+        refreshTest.addEventListener('input', () => {
+            log(`Refresh test: Input değişti - "${refreshTest.value}"`);
+            refreshStatus.textContent = `Sayfa durumu: ✅ Sayfa yenilenmedi (${pageLoadCount} yükleme)`;
+            refreshStatus.className = 'status success';
+        });
+
+        // Test 4: Cursor Position Test
+        const cursorTest = document.getElementById('cursorTest');
+        const cursorStatus = document.getElementById('cursorStatus');
+        
+        cursorTest.addEventListener('input', (e) => {
+            const currentPosition = e.target.selectionStart;
+            log(`Cursor test: Cursor pozisyonu ${lastCursorPosition} -> ${currentPosition}`);
+            
+            if (currentPosition === lastCursorPosition + 1) {
+                cursorStatus.textContent = 'Cursor pozisyonu: ✅ Doğru';
+                cursorStatus.className = 'status success';
+            } else {
+                cursorStatus.textContent = 'Cursor pozisyonu: ❌ Yanlış';
+                cursorStatus.className = 'status error';
+            }
+            
+            lastCursorPosition = currentPosition;
+        });
+
+        cursorTest.addEventListener('keyup', (e) => {
+            lastCursorPosition = e.target.selectionStart;
+        });
+
+        // Utility functions
+        function log(message) {
+            const logDiv = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('testLog').innerHTML = '';
+            apiCallCount = 0;
+            pageLoadCount = 0;
+            lastCursorPosition = 0;
+            
+            // Reset statuses
+            focusStatus.textContent = 'Focus durumu: Bekleniyor...';
+            focusStatus.className = 'status info';
+            
+            debounceStatus.textContent = 'API çağrı sayısı: 0';
+            debounceStatus.className = 'status info';
+            
+            refreshStatus.textContent = 'Sayfa durumu: Bekleniyor...';
+            refreshStatus.className = 'status info';
+            
+            cursorStatus.textContent = 'Cursor pozisyonu: Bekleniyor...';
+            cursorStatus.className = 'status info';
+        }
+
+        // Initial log
+        log('Test sayfası yüklendi. Testleri başlatabilirsiniz.');
+    </script>
+</body>
+</html>
