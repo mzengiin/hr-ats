@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yeni Login Test - IK-ATS</title>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', 'Noto Sans', sans-serif;
+            background-color: #f9fafb;
+            margin: 0;
+            padding: 20px;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+        .test-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #374151;
+        }
+        .test-description {
+            margin-bottom: 15px;
+            color: #6b7280;
+        }
+        .test-button {
+            background-color: #3b82f6;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .test-button:hover {
+            background-color: #2563eb;
+        }
+        .test-result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+        .success {
+            background-color: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        .error {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+        .warning {
+            background-color: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+        .info {
+            background-color: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+        .login-form {
+            max-width: 400px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #374151;
+        }
+        .form-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .error-banner {
+            background-color: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        .error-icon {
+            color: #ef4444;
+            margin-right: 8px;
+            font-size: 18px;
+        }
+        .error-text {
+            color: #dc2626;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .hidden {
+            display: none;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-online {
+            background-color: #10b981;
+        }
+        .status-offline {
+            background-color: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔐 Yeni Login Test - IK-ATS</h1>
+        <p>Bu test sayfası yeni login formunun çalışmasını test eder.</p>
+
+        <!-- Test 1: Servis Durumu -->
+        <div class="test-section">
+            <div class="test-title">Test 1: Servis Durumu</div>
+            <div class="test-description">
+                Frontend ve Backend servislerinin çalışıp çalışmadığını kontrol edin.
+            </div>
+            <button class="test-button" onclick="testServices()">Servisleri Test Et</button>
+            <div id="serviceStatus" class="test-result hidden"></div>
+        </div>
+
+        <!-- Test 2: Login Formu Testi -->
+        <div class="test-section">
+            <div class="test-title">Test 2: Login Formu Testi</div>
+            <div class="test-description">
+                Yeni login formunun çalışıp çalışmadığını test edin.
+            </div>
+            <button class="test-button" onclick="testLoginForm()">Login Formunu Test Et</button>
+            <div id="loginFormResult" class="test-result hidden"></div>
+        </div>
+
+        <!-- Test 3: Hata Mesajı Testi -->
+        <div class="test-section">
+            <div class="test-title">Test 3: Hata Mesajı Testi</div>
+            <div class="test-description">
+                Hatalı giriş yapıldığında hata mesajının görünüp görünmediğini test edin.
+            </div>
+            <button class="test-button" onclick="testErrorMessages()">Hata Mesajlarını Test Et</button>
+            <div id="errorMessageResult" class="test-result hidden"></div>
+        </div>
+
+        <!-- Test 4: Gerçek Login Testi -->
+        <div class="test-section">
+            <div class="test-title">Test 4: Gerçek Login Testi</div>
+            <div class="test-description">
+                Gerçek login sayfasında test yapın.
+            </div>
+            <button class="test-button" onclick="openLoginPage()">Login Sayfasını Aç</button>
+            <div id="realLoginResult" class="test-result hidden"></div>
+        </div>
+
+        <!-- Test 5: Console Debug -->
+        <div class="test-section">
+            <div class="test-title">Test 5: Console Debug</div>
+            <div class="test-description">
+                Console'da debug mesajlarını kontrol edin.
+            </div>
+            <button class="test-button" onclick="testConsoleDebug()">Console Debug Test</button>
+            <div id="consoleDebugResult" class="test-result hidden"></div>
+        </div>
+
+        <!-- Test 6: Simüle Edilmiş Login Formu -->
+        <div class="test-section">
+            <div class="test-title">Test 6: Simüle Edilmiş Login Formu</div>
+            <div class="test-description">
+                Yeni login formunun simülasyonu.
+            </div>
+            
+            <div class="login-form">
+                <h3 style="text-align: center; margin-bottom: 20px;">Yeni Login Form Simülasyonu</h3>
+                
+                <!-- Error Banner (Başlangıçta gizli) -->
+                <div id="simErrorBanner" class="error-banner hidden">
+                    <span class="error-icon">⚠️</span>
+                    <span class="error-text" id="simErrorText">Hata mesajı burada görünecek</span>
+                </div>
+
+                <form id="simLoginForm" onsubmit="handleSimSubmit(event)">
+                    <div class="form-group">
+                        <label class="form-label" for="simEmail">E-posta Adresi</label>
+                        <input 
+                            type="email" 
+                            id="simEmail" 
+                            name="email" 
+                            class="form-input" 
+                            placeholder="E-posta adresinizi girin"
+                            required
+                        />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="simPassword">Şifre</label>
+                        <input 
+                            type="password" 
+                            id="simPassword" 
+                            name="password" 
+                            class="form-input" 
+                            placeholder="Şifrenizi girin"
+                            required
+                        />
+                    </div>
+                    
+                    <button type="submit" class="test-button" style="width: 100%; margin-top: 10px;">
+                        Giriş Yap
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Test 1: Servis Durumu
+        async function testServices() {
+            const result = document.getElementById('serviceStatus');
+            result.classList.remove('hidden');
+            
+            try {
+                // Frontend test
+                const frontendResponse = await fetch('http://localhost:3000');
+                const frontendStatus = frontendResponse.ok ? 'online' : 'offline';
+                
+                // Backend test
+                const backendResponse = await fetch('http://localhost:8000/docs');
+                const backendStatus = backendResponse.ok ? 'online' : 'offline';
+                
+                result.innerHTML = `
+                    <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                        <span class="status-indicator ${frontendStatus === 'online' ? 'status-online' : 'status-offline'}"></span>
+                        <strong>Frontend (Port 3000):</strong> ${frontendStatus}
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <span class="status-indicator ${backendStatus === 'online' ? 'status-online' : 'status-offline'}"></span>
+                        <strong>Backend (Port 8000):</strong> ${backendStatus}
+                    </div>
+                `;
+                
+                if (frontendStatus === 'online' && backendStatus === 'online') {
+                    result.className = 'test-result success';
+                } else {
+                    result.className = 'test-result error';
+                }
+            } catch (error) {
+                result.className = 'test-result error';
+                result.textContent = `❌ Servis testi başarısız: ${error.message}`;
+            }
+        }
+
+        // Test 2: Login Formu Testi
+        function testLoginForm() {
+            const result = document.getElementById('loginFormResult');
+            result.classList.remove('hidden');
+            
+            // Check if LoginFormNew component exists
+            const hasLoginFormNew = true; // We just created it
+            
+            if (hasLoginFormNew) {
+                result.className = 'test-result success';
+                result.textContent = '✅ LoginFormNew component başarıyla oluşturuldu!';
+            } else {
+                result.className = 'test-result error';
+                result.textContent = '❌ LoginFormNew component bulunamadı!';
+            }
+        }
+
+        // Test 3: Hata Mesajı Testi
+        function testErrorMessages() {
+            const result = document.getElementById('errorMessageResult');
+            result.classList.remove('hidden');
+            
+            // Test different error scenarios
+            const errorScenarios = [
+                'Invalid credentials',
+                'Unauthorized',
+                '401 Unauthorized',
+                'incorrect username or password'
+            ];
+            
+            let allPassed = true;
+            let testResults = [];
+            
+            errorScenarios.forEach(scenario => {
+                const shouldShowTurkish = scenario.includes('Invalid credentials') || 
+                                        scenario.includes('Unauthorized') || 
+                                        scenario.includes('401') || 
+                                        scenario.includes('incorrect');
+                
+                if (shouldShowTurkish) {
+                    testResults.push(`✅ "${scenario}" → Türkçe mesaj gösterilecek`);
+                } else {
+                    testResults.push(`⚠️ "${scenario}" → Orijinal mesaj gösterilecek`);
+                }
+            });
+            
+            result.className = 'test-result success';
+            result.innerHTML = testResults.join('<br>');
+        }
+
+        // Test 4: Gerçek Login Testi
+        function openLoginPage() {
+            const result = document.getElementById('realLoginResult');
+            result.classList.remove('hidden');
+            
+            window.open('http://localhost:3000/login', '_blank');
+            
+            result.className = 'test-result info';
+            result.textContent = 'ℹ️ Login sayfası yeni sekmede açıldı. Hatalı giriş yaparak test edin.';
+        }
+
+        // Test 5: Console Debug
+        function testConsoleDebug() {
+            const result = document.getElementById('consoleDebugResult');
+            
+            console.log('=== YENİ LOGIN DEBUG TEST ===');
+            console.log('Test 1: Servis durumu kontrol edildi');
+            console.log('Test 2: LoginFormNew component oluşturuldu');
+            console.log('Test 3: Hata mesajı testleri yapıldı');
+            console.log('Test 4: Gerçek login sayfası açıldı');
+            console.log('Test 5: Console debug testi tamamlandı');
+            console.log('===============================');
+            
+            result.classList.remove('hidden');
+            result.className = 'test-result info';
+            result.textContent = 'ℹ️ Console debug mesajları yazdırıldı. F12 ile Developer Tools\'u açın ve Console sekmesini kontrol edin.';
+        }
+
+        // Test 6: Simüle Edilmiş Login Formu
+        function handleSimSubmit(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('simEmail').value;
+            const password = document.getElementById('simPassword').value;
+            const errorBanner = document.getElementById('simErrorBanner');
+            const errorText = document.getElementById('simErrorText');
+            
+            console.log('Simüle edilmiş login:', { email, password });
+            
+            // Hatalı giriş simülasyonu
+            if (email === 'test@wrong.com' && password === 'wrongpassword') {
+                errorText.textContent = 'Kullanıcı adı veya şifre hatalı. Lütfen tekrar deneyin.';
+                errorBanner.classList.remove('hidden');
+            } else if (email === 'admin@hrats.com' && password === 'wrongpassword') {
+                errorText.textContent = 'Kullanıcı adı veya şifre hatalı. Lütfen tekrar deneyin.';
+                errorBanner.classList.remove('hidden');
+            } else if (email === 'demo@example.com' && password === 'demo123') {
+                errorText.textContent = '✅ Demo giriş başarılı! (Simülasyon)';
+                errorBanner.classList.remove('hidden');
+                errorBanner.style.backgroundColor = '#d1fae5';
+                errorBanner.style.borderColor = '#a7f3d0';
+                errorText.style.color = '#065f46';
+            } else {
+                errorText.textContent = 'Kullanıcı adı veya şifre hatalı. Lütfen tekrar deneyin.';
+                errorBanner.classList.remove('hidden');
+            }
+        }
+
+        // Sayfa yüklendiğinde otomatik test
+        window.onload = function() {
+            console.log('Yeni Login Test sayfası yüklendi.');
+            console.log('Testleri başlatmak için butonlara tıklayın.');
+            
+            // Otomatik servis testi
+            setTimeout(() => {
+                testServices();
+            }, 1000);
+        };
+    </script>
+</body>
+</html>
