@@ -133,8 +133,9 @@ export const AuthProvider = ({ children }) => {
       const accessToken = localStorage.getItem('access_token');
       const refreshToken = localStorage.getItem('refresh_token');
       const userData = localStorage.getItem('user_data');
+      const isAuthenticated = localStorage.getItem('isAuthenticated');
 
-      if (accessToken && refreshToken && userData) {
+      if (accessToken && refreshToken && userData && isAuthenticated === 'true') {
         try {
           const user = JSON.parse(userData);
           dispatch({
@@ -160,6 +161,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user_data');
+    localStorage.removeItem('isAuthenticated');
   }, []);
 
   // Refresh access token

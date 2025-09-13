@@ -1,301 +1,276 @@
-/**
- * Login Form Component with validation
- */
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { validateEmail, validatePassword } from '../utils/validation';
+import { useNavigate } from 'react-router-dom';
 
 const LoginForm = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
-  const [errors, setErrors] = useState({});
-  const [showPassword, setShowPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const { login, error, clearError, isAuthenticated } = useAuth();
-
-  // Debug error state
-  useEffect(() => {
-    console.log('🔍 Error state changed:', error);
-  }, [error]);
-
-  // Test error state manually
-  const testErrorState = () => {
-    console.log('🧪 Testing error state manually...');
-    console.log('Current error state:', error);
-    
-    // Simulate an error by calling login with wrong credentials
-    console.log('🧪 Simulating login with wrong credentials...');
-    login('test@wrong.com', 'wrongpassword');
-  };
   const navigate = useNavigate();
-  const location = useLocation();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotMessage, setForgotMessage] = useState('');
 
-  // Redirect if already authenticated
+  // Remember me özelliğini yükle
   useEffect(() => {
-    if (isAuthenticated) {
-      const from = location.state?.from?.pathname || '/dashboard';
-      navigate(from, { replace: true });
+    const rememberedEmail = localStorage.getItem('rememberedEmail');
+    const isRemembered = localStorage.getItem('rememberMe') === 'true';
+    
+    if (isRemembered && rememberedEmail) {
+      setEmail(rememberedEmail);
+      setRememberMe(true);
     }
-  }, [isAuthenticated, navigate, location]);
+  }, []);
 
-  // Clear errors when component mounts
-  useEffect(() => {
-    clearError();
-  }, [clearError]);
-
-  // Handle input change
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-
-    // Clear error for this field
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
+  const handleForgotPassword = () => {
+    setShowForgotPassword(true);
+    setForgotMessage('');
   };
 
-  // Validate form
-  const validateForm = () => {
-    const newErrors = {};
-
-    // Validate email
-    if (!formData.email) {
-      newErrors.email = 'E-posta adresi gereklidir';
-    } else if (!validateEmail(formData.email)) {
-      newErrors.email = 'Lütfen geçerli bir e-posta adresi girin';
-    }
-
-    // Validate password
-    if (!formData.password) {
-      newErrors.password = 'Şifre gereklidir';
-    } else if (!validatePassword(formData.password)) {
-      newErrors.password = 'Şifre en az 6 karakter olmalıdır';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // Handle form submission
-  const handleSubmit = async (e) => {
+  const handleForgotPasswordSubmit = async (e) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsSubmitting(true);
-    clearError();
-
-    console.log('🔐 Login attempt started:', { email: formData.email });
+    setForgotLoading(true);
+    setForgotMessage('');
 
     try {
-      const result = await login(formData.email, formData.password);
-      
-      console.log('🔐 Login result:', result);
-      
-      if (result && result.success) {
-        console.log('✅ Login successful, navigating to dashboard');
-        const from = location.state?.from?.pathname || '/dashboard';
-        navigate(from, { replace: true });
-      } else {
-        console.log('❌ Login failed, result:', result);
-      }
-      // Error state'i AuthContext'ten otomatik olarak gelecek
+      // Şifre sıfırlama API'si (şimdilik mock)
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      setForgotMessage('Şifre sıfırlama bağlantısı e-posta adresinize gönderildi.');
     } catch (error) {
-      console.error('❌ Login error:', error);
-      // Error state'i AuthContext'ten otomatik olarak gelecek
+      setForgotMessage('Bir hata oluştu. Lütfen tekrar deneyin.');
     } finally {
-      setIsSubmitting(false);
+      setForgotLoading(false);
     }
   };
 
-  // Handle demo login
-  const handleDemoLogin = () => {
-    setFormData({
-      email: 'demo@example.com',
-      password: 'demo123'
-    });
+  const closeForgotPassword = () => {
+    setShowForgotPassword(false);
+    setForgotEmail('');
+    setForgotMessage('');
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8001/api/v1';
+      const response = await fetch(`${apiUrl}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // localStorage'a kaydet - Tüm gerekli veriler
+        localStorage.setItem('access_token', data.access_token);
+        localStorage.setItem('refresh_token', data.refresh_token);
+        localStorage.setItem('user_data', JSON.stringify(data.user));
+        localStorage.setItem('isAuthenticated', 'true');
+        
+        // Beni hatırla özelliği
+        if (rememberMe) {
+          localStorage.setItem('rememberMe', 'true');
+          localStorage.setItem('rememberedEmail', email);
+        } else {
+          localStorage.removeItem('rememberMe');
+          localStorage.removeItem('rememberedEmail');
+        }
+        
+        console.log('✅ Login başarılı!');
+        
+        // Dashboard'a yönlendir - React Router ile (En güvenli yöntem)
+        setTimeout(() => {
+            window.location.href = '/dashboard';
+          //navigate('/dashboard');
+        }, 1000);
+        
+      } else {
+        const errorData = await response.json();
+        setError('Kullanıcı adı veya şifre hatalı. Lütfen tekrar deneyin.');
+      }
+    } catch (error) {
+      setError('Bağlantı hatası. Lütfen tekrar deneyin.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" style={{fontFamily: 'Plus Jakarta Sans, Noto Sans, sans-serif'}}>
-      <div className="max-w-md w-full">
-        {/* Tek Beyaz Çerçeve - Logo, Başlık ve Form */}
-        <div className="bg-white rounded-lg p-8 shadow-lg">
-          {/* Logo ve Başlık */}
-          <div className="text-center mb-8">
-            <img 
-              src="/logo.png" 
-              alt="IK-ATS Logo" 
-              className="mx-auto h-16 w-auto"
-            />
-            <h2 className="mt-6 text-3xl font-bold tracking-tight text-gray-900">IK-ATS'e Hoş Geldiniz</h2>
-            <p className="mt-2 text-sm text-gray-600">Lütfen hesabınıza giriş yapın</p>
-          </div>
-          {/* Error Banner */}
-          {error && (
-            <div className="mb-4 bg-red-50 border border-red-200 rounded-md p-4 flex items-center">
-              <span className="text-red-400 mr-2">
-                <span className="material-symbols-outlined text-lg">error</span>
-              </span>
-              <span className="text-red-700 text-sm font-medium">
-                {error.includes('Invalid credentials') || error.includes('Unauthorized') || error.includes('401') || error.includes('incorrect')
-                  ? 'Kullanıcı adı veya şifre hatalı. Lütfen tekrar deneyin.' 
-                  : error}
-              </span>
-            </div>
-          )}
-          
-          {/* Debug Info */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mb-4 bg-blue-50 border border-blue-200 rounded-md p-2 text-xs text-blue-700">
-              <strong>Debug:</strong> Error state: {error ? `"${error}"` : 'null'}
-              <br />
-              <button 
-                onClick={testErrorState}
-                className="mt-2 px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
-              >
-                Test Error State
-              </button>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email Field */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                E-posta Adresi
-              </label>
-              <div className="mt-1">
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#137fec] focus:border-[#137fec] sm:text-sm ${
-                    errors.email ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  placeholder="E-posta adresinizi girin"
-                  disabled={isSubmitting}
-                  autoComplete="email"
-                />
-              </div>
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-              )}
-            </div>
-
-            {/* Password Field */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Şifre
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className={`appearance-none block w-full px-3 py-2 pr-10 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#137fec] focus:border-[#137fec] sm:text-sm ${
-                    errors.password ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  placeholder="Şifrenizi girin"
-                  disabled={isSubmitting}
-                  autoComplete="current-password"
-                />
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      {/* Şifremi Unuttum Modal */}
+      {showForgotPassword && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Şifremi Unuttum</h3>
                 <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
-                  disabled={isSubmitting}
+                  onClick={closeForgotPassword}
+                  className="text-gray-400 hover:text-gray-600"
                 >
-                  <span className="text-gray-400 hover:text-gray-600">
-                    {showPassword ? '👁️' : '👁️‍🗨️'}
-                  </span>
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
-              {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password}</p>
-              )}
+              
+              <form onSubmit={handleForgotPasswordSubmit}>
+                <div className="mb-4">
+                  <label htmlFor="forgot-email" className="block text-sm font-medium text-gray-700 mb-2">
+                    E-posta Adresiniz
+                  </label>
+                  <input
+                    id="forgot-email"
+                    type="email"
+                    required
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="E-posta adresinizi girin"
+                  />
+                </div>
+                
+                {forgotMessage && (
+                  <div className={`mb-4 p-3 rounded-md text-sm ${
+                    forgotMessage.includes('gönderildi') 
+                      ? 'bg-green-100 text-green-700' 
+                      : 'bg-red-100 text-red-700'
+                  }`}>
+                    {forgotMessage}
+                  </div>
+                )}
+                
+                <div className="flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={closeForgotPassword}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                  >
+                    İptal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={forgotLoading}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {forgotLoading ? 'Gönderiliyor...' : 'Gönder'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-md w-full space-y-8">
+        <div className="bg-white p-8 rounded-lg shadow-lg">
+          <div className="text-center mb-8">
+            <img
+              src="/logo.png"
+              alt="IK-ATS Logo"
+              className="mx-auto h-16 w-auto"
+            />
+            <h2 className="mt-6 text-3xl font-bold tracking-tight text-gray-900">
+              IK-ATS'e Hoş Geldiniz
+            </h2>
+            <p className="mt-2 text-sm text-gray-600">
+              Lütfen hesabınıza giriş yapın
+            </p>
+          </div>
+
+          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+            {error && (
+              <div className="p-3 rounded-md bg-red-100 text-red-700 text-sm font-medium">
+                {error}
+              </div>
+            )}
+            
+            <div>
+              <label htmlFor="email" className="sr-only">
+                E-posta adresi
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="E-posta adresinizi girin"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="password" className="sr-only">
+                Şifre
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="Şifrenizi girin"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
 
-            {/* Form Options */}
+            {/* Beni Hatırla ve Şifremi Unuttum */}
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <input
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
-                  className="h-4 w-4 text-[#137fec] focus:ring-[#137fec] border-gray-300 rounded"
-                  disabled={isSubmitting}
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
                   Beni hatırla
                 </label>
               </div>
+
               <div className="text-sm">
-                <a href="#" className="font-medium text-[#137fec] hover:text-[#0f66bc]">
-                  Şifremi Unuttum
-                </a>
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="font-medium text-blue-600 hover:text-blue-500"
+                >
+                  Şifremi unuttum
+                </button>
               </div>
             </div>
 
-            {/* Submit Button */}
             <div>
               <button
                 type="submit"
-                disabled={isSubmitting}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-[#137fec] hover:bg-[#0f66bc] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#137fec] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={loading}
               >
-                {isSubmitting ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Giriş yapılıyor...
-                  </>
+                {loading ? (
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
                 ) : (
                   'Giriş Yap'
                 )}
               </button>
             </div>
-
-            {/* Demo Login Button */}
-            <div>
-              <button
-                type="button"
-                onClick={handleDemoLogin}
-                disabled={isSubmitting}
-                className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#137fec] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Demo Hesabı Dene
-              </button>
-            </div>
           </form>
-
-          {/* Sign Up Link */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Hesabınız yok mu?{' '}
-              <a href="/register" className="font-medium text-[#137fec] hover:text-[#0f66bc]">
-                Kayıt olun
-              </a>
-            </p>
-          </div>
         </div>
       </div>
     </div>
@@ -303,6 +278,3 @@ const LoginForm = () => {
 };
 
 export default LoginForm;
-
-
-

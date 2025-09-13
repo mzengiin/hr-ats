@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import LoginFormFinal from './components/LoginFormFinal';
+import LoginForm from './components/LoginForm';
 import Layout from './components/Layout';
 import DashboardNew from './components/DashboardNew';
 import CandidateList from './components/CandidateList';
@@ -34,7 +34,7 @@ function AppContent() {
           <Route 
             path="/login" 
             element={
-              isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginFormFinal />
+              isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginForm />
             } 
           />
           <Route 
