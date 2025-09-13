@@ -39,6 +39,7 @@ const CandidateForm = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
+  const [errors, setErrors] = useState({});
   const [options, setOptions] = useState({
     positions: [],
     applicationChannels: [],
@@ -131,6 +132,14 @@ const CandidateForm = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     
+    // Clear error for this field when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+    
     if (name === 'application_date') {
       // Handle date input - convert from YYYY-MM-DD to DD/MM/YYYY for display
       setFormData(prev => ({
@@ -150,6 +159,28 @@ const CandidateForm = () => {
         [name]: value
       }));
     }
+  };
+
+  const handleInvalid = (e) => {
+    const fieldName = e.target.name;
+    const fieldLabels = {
+      'first_name': 'Ad',
+      'last_name': 'Soyad',
+      'email': 'E-posta',
+      'phone': 'Telefon',
+      'position': 'Pozisyon',
+      'application_channel': 'Başvuru Kanalı',
+      'application_date': 'Başvuru Tarihi',
+      'hr_specialist': 'İK Uzmanı',
+      'status': 'Aday Durumu'
+    };
+    
+    const label = fieldLabels[fieldName] || fieldName;
+    e.target.setCustomValidity(`${label} alanı zorunludur.`);
+  };
+
+  const handleInput = (e) => {
+    e.target.setCustomValidity('');
   };
 
   const handleFileChange = (e) => {
@@ -283,8 +314,62 @@ const CandidateForm = () => {
     }
   };
 
+  // Validate form
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!formData.first_name.trim()) {
+      newErrors.first_name = 'Ad alanı zorunludur';
+    }
+    
+    if (!formData.last_name.trim()) {
+      newErrors.last_name = 'Soyad alanı zorunludur';
+    }
+    
+    if (!formData.email.trim()) {
+      newErrors.email = 'E-posta alanı zorunludur';
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        newErrors.email = 'Geçerli bir e-posta adresi girin';
+      }
+    }
+    
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Telefon alanı zorunludur';
+    }
+    
+    if (!formData.position) {
+      newErrors.position = 'Pozisyon alanı zorunludur';
+    }
+    
+    if (!formData.application_channel) {
+      newErrors.application_channel = 'Başvuru Kanalı alanı zorunludur';
+    }
+    
+    if (!formData.application_date) {
+      newErrors.application_date = 'Başvuru Tarihi alanı zorunludur';
+    }
+    
+    if (!formData.hr_specialist) {
+      newErrors.hr_specialist = 'İK Uzmanı alanı zorunludur';
+    }
+    
+    if (!formData.status) {
+      newErrors.status = 'Aday Durumu alanı zorunludur';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     setLoading(true);
     setError(null);
 
@@ -387,15 +472,22 @@ const CandidateForm = () => {
                   Ad *
                 </label>
                 <input
-                  className="w-full mt-1 px-3 py-2.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#137fec] focus:border-[#137fec] placeholder:text-gray-400"
+                  className={`w-full mt-1 px-3 py-2.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#137fec] focus:border-[#137fec] placeholder:text-gray-400 ${
+                    errors.first_name ? 'border-red-500' : ''
+                  }`}
                   id="first_name"
                   name="first_name"
                   type="text"
                   placeholder="Adayın adını girin"
                   value={formData.first_name}
                   onChange={handleInputChange}
+                  onInvalid={handleInvalid}
+                  onInput={handleInput}
                   required
                 />
+                {errors.first_name && (
+                  <p className="mt-1 text-sm text-red-600">{errors.first_name}</p>
+                )}
               </div>
 
               {/* Soyad */}
@@ -404,15 +496,22 @@ const CandidateForm = () => {
                   Soyad *
                 </label>
                 <input
-                  className="w-full mt-1 px-3 py-2.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#137fec] focus:border-[#137fec] placeholder:text-gray-400"
+                  className={`w-full mt-1 px-3 py-2.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#137fec] focus:border-[#137fec] placeholder:text-gray-400 ${
+                    errors.last_name ? 'border-red-500' : ''
+                  }`}
                   id="last_name"
                   name="last_name"
                   type="text"
                   placeholder="Adayın soyadını girin"
                   value={formData.last_name}
                   onChange={handleInputChange}
+                  onInvalid={handleInvalid}
+                  onInput={handleInput}
                   required
                 />
+                {errors.last_name && (
+                  <p className="mt-1 text-sm text-red-600">{errors.last_name}</p>
+                )}
               </div>
 
               {/* E-posta */}
@@ -421,15 +520,22 @@ const CandidateForm = () => {
                   E-posta *
                 </label>
                 <input
-                  className="w-full mt-1 px-3 py-2.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#137fec] focus:border-[#137fec] placeholder:text-gray-400"
+                  className={`w-full mt-1 px-3 py-2.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#137fec] focus:border-[#137fec] placeholder:text-gray-400 ${
+                    errors.email ? 'border-red-500' : ''
+                  }`}
                   id="email"
                   name="email"
                   type="email"
                   placeholder="Adayın e-posta adresini girin"
                   value={formData.email}
                   onChange={handleInputChange}
+                  onInvalid={handleInvalid}
+                  onInput={handleInput}
                   required
                 />
+                {errors.email && (
+                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                )}
               </div>
 
               {/* Telefon */}
@@ -445,15 +551,22 @@ const CandidateForm = () => {
                   {(inputProps) => (
                     <input
                       {...inputProps}
-                      className="w-full mt-1 px-3 py-2.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#137fec] focus:border-[#137fec] placeholder:text-gray-400"
+                      className={`w-full mt-1 px-3 py-2.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#137fec] focus:border-[#137fec] placeholder:text-gray-400 ${
+                        errors.phone ? 'border-red-500' : ''
+                      }`}
                       id="phone"
                       name="phone"
                       type="tel"
                       placeholder="(5xx) xxx xx xx"
+                      onInvalid={handleInvalid}
+                      onInput={handleInput}
                       required
                     />
                   )}
                 </InputMask>
+                {errors.phone && (
+                  <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+                )}
               </div>
 
               {/* Pozisyon */}
@@ -462,11 +575,15 @@ const CandidateForm = () => {
                   Pozisyon *
                 </label>
                 <select
-                  className="w-full mt-1 px-3 py-2.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#137fec] focus:border-[#137fec]"
+                  className={`w-full mt-1 px-3 py-2.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#137fec] focus:border-[#137fec] ${
+                    errors.position ? 'border-red-500' : ''
+                  }`}
                   id="position"
                   name="position"
                   value={formData.position}
                   onChange={handleInputChange}
+                  onInvalid={handleInvalid}
+                  onInput={handleInput}
                   required
                 >
                   <option value="">Pozisyon seçin</option>
@@ -474,6 +591,9 @@ const CandidateForm = () => {
                     <option key={position.id} value={position.name}>{position.name}</option>
                   ))}
                 </select>
+                {errors.position && (
+                  <p className="mt-1 text-sm text-red-600">{errors.position}</p>
+                )}
               </div>
 
               {/* Başvuru Kanalı */}
@@ -482,11 +602,15 @@ const CandidateForm = () => {
                   Başvuru Kanalı *
                 </label>
                 <select
-                  className="w-full mt-1 px-3 py-2.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#137fec] focus:border-[#137fec]"
+                  className={`w-full mt-1 px-3 py-2.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#137fec] focus:border-[#137fec] ${
+                    errors.application_channel ? 'border-red-500' : ''
+                  }`}
                   id="application_channel"
                   name="application_channel"
                   value={formData.application_channel}
                   onChange={handleInputChange}
+                  onInvalid={handleInvalid}
+                  onInput={handleInput}
                   required
                 >
                   <option value="">Başvuru kanalı seçin</option>
@@ -494,6 +618,9 @@ const CandidateForm = () => {
                     <option key={channel.id} value={channel.name}>{channel.name}</option>
                   ))}
                 </select>
+                {errors.application_channel && (
+                  <p className="mt-1 text-sm text-red-600">{errors.application_channel}</p>
+                )}
               </div>
 
               {/* Başvuru Tarihi */}
@@ -504,6 +631,14 @@ const CandidateForm = () => {
                 <DatePicker
                   selected={formData.application_date ? new Date(formData.application_date) : null}
                   onChange={(date) => {
+                    // Clear error for this field when user selects a date
+                    if (errors.application_date) {
+                      setErrors(prev => ({
+                        ...prev,
+                        application_date: ''
+                      }));
+                    }
+                    
                     if (date) {
                       const isoDate = date.toISOString();
                       setFormData(prev => ({
@@ -516,12 +651,19 @@ const CandidateForm = () => {
                   dateFormat="dd/MM/yyyy"
                   placeholderText="GG/AA/YYYY"
                   locale="tr"
-                  className="w-full mt-1 px-3 py-2.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#137fec] focus:border-[#137fec]"
+                  className={`w-full mt-1 px-3 py-2.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#137fec] focus:border-[#137fec] ${
+                    errors.application_date ? 'border-red-500' : ''
+                  }`}
                   wrapperClassName="w-full"
                   showPopperArrow={false}
                   popperPlacement="bottom-start"
+                  onInvalid={handleInvalid}
+                  onInput={handleInput}
                   required
                 />
+                {errors.application_date && (
+                  <p className="mt-1 text-sm text-red-600">{errors.application_date}</p>
+                )}
               </div>
 
               {/* İK Uzmanı */}
@@ -530,11 +672,15 @@ const CandidateForm = () => {
                   İK Uzmanı (Ekleyen) *
                 </label>
                 <select
-                  className="w-full mt-1 px-3 py-2.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#137fec] focus:border-[#137fec]"
+                  className={`w-full mt-1 px-3 py-2.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#137fec] focus:border-[#137fec] ${
+                    errors.hr_specialist ? 'border-red-500' : ''
+                  }`}
                   id="hr_specialist"
                   name="hr_specialist"
                   value={formData.hr_specialist}
                   onChange={handleInputChange}
+                  onInvalid={handleInvalid}
+                  onInput={handleInput}
                   required
                 >
                   <option value="">İK uzmanı seçin</option>
@@ -542,6 +688,9 @@ const CandidateForm = () => {
                     <option key={specialist.id} value={specialist.name}>{specialist.name}</option>
                   ))}
                 </select>
+                {errors.hr_specialist && (
+                  <p className="mt-1 text-sm text-red-600">{errors.hr_specialist}</p>
+                )}
               </div>
 
               {/* Aday Durumu */}
@@ -550,11 +699,15 @@ const CandidateForm = () => {
                   Aday Durumu *
                 </label>
                 <select
-                  className="w-full mt-1 px-3 py-2.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#137fec] focus:border-[#137fec]"
+                  className={`w-full mt-1 px-3 py-2.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#137fec] focus:border-[#137fec] ${
+                    errors.status ? 'border-red-500' : ''
+                  }`}
                   id="status"
                   name="status"
                   value={formData.status}
                   onChange={handleInputChange}
+                  onInvalid={handleInvalid}
+                  onInput={handleInput}
                   required
                 >
                   <option value="">Durum seçin</option>
@@ -562,6 +715,9 @@ const CandidateForm = () => {
                     <option key={status.id} value={status.name}>{status.name}</option>
                   ))}
                 </select>
+                {errors.status && (
+                  <p className="mt-1 text-sm text-red-600">{errors.status}</p>
+                )}
               </div>
 
               {/* Kısa Not */}

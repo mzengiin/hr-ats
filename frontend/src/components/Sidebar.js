@@ -61,7 +61,8 @@ const Sidebar = ({ isCollapsed, onToggle }) => {
           {menuItems.map((item) => {
             const isExpanded = expandedMenus.includes(item.id);
             const isActive = location.pathname === item.path || 
-              (item.subItems && item.subItems.some(subItem => location.pathname === subItem.path));
+              (item.subItems && item.subItems.some(subItem => location.pathname === subItem.path)) ||
+              (item.id === 'candidates' && location.pathname.startsWith('/candidates'));
             
             return (
               <div key={item.id}>

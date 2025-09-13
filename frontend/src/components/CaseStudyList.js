@@ -93,8 +93,8 @@ const CaseStudyList = () => {
     setCurrentPage(1);
   };
 
-  // Handle sort
-  const handleSort = (e) => {
+  // Handle sort dropdown
+  const handleSortChange = (e) => {
     setSortBy(e.target.value);
     setCurrentPage(1);
   };
@@ -102,6 +102,17 @@ const CaseStudyList = () => {
   // Handle sort order
   const handleSortOrder = (e) => {
     setSortOrder(e.target.value);
+    setCurrentPage(1);
+  };
+
+  // Handle column sorting
+  const handleSort = (column) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortOrder('asc');
+    }
     setCurrentPage(1);
   };
 
@@ -198,7 +209,7 @@ const CaseStudyList = () => {
               </select>
               <select
                 value={sortBy}
-                onChange={handleSort}
+                onChange={handleSortChange}
                 className="flex w-full sm:w-auto min-w-0 rounded-md text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-gray-300 bg-white h-11 px-4 text-sm font-medium"
               >
                 {sortOptions.map((option) => (
@@ -229,17 +240,57 @@ const CaseStudyList = () => {
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600">
-                    Vaka Çalışması Başlığı
+                  <th 
+                    className="px-6 py-4 text-sm font-semibold text-gray-600 cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('title')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Vaka Çalışması Başlığı
+                      {sortBy === 'title' && (
+                        <span className="material-symbols-outlined text-sm">
+                          {sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+                        </span>
+                      )}
+                    </div>
                   </th>
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600">
-                    Aday
+                  <th 
+                    className="px-6 py-4 text-sm font-semibold text-gray-600 cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('candidate_name')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Aday
+                      {sortBy === 'candidate_name' && (
+                        <span className="material-symbols-outlined text-sm">
+                          {sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+                        </span>
+                      )}
+                    </div>
                   </th>
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600">
-                    Son Teslim Tarihi
+                  <th 
+                    className="px-6 py-4 text-sm font-semibold text-gray-600 cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('due_date')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Son Teslim Tarihi
+                      {sortBy === 'due_date' && (
+                        <span className="material-symbols-outlined text-sm">
+                          {sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+                        </span>
+                      )}
+                    </div>
                   </th>
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600 text-center">
-                    Durum
+                  <th 
+                    className="px-6 py-4 text-sm font-semibold text-gray-600 text-center cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('status')}
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      Durum
+                      {sortBy === 'status' && (
+                        <span className="material-symbols-outlined text-sm">
+                          {sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+                        </span>
+                      )}
+                    </div>
                   </th>
                   <th className="px-6 py-4 text-sm font-semibold text-gray-600 text-center">
                     Eylemler
@@ -270,19 +321,23 @@ const CaseStudyList = () => {
                           {caseStudy.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center space-x-2">
-                        <button
-                          onClick={() => handleEditCaseStudy(caseStudy)}
-                          className="text-blue-600 hover:text-blue-800 font-semibold text-sm"
-                        >
-                          Not Ekle
-                        </button>
-                        <button
-                          onClick={() => handleEditCaseStudy(caseStudy)}
-                          className="text-blue-600 hover:text-blue-800 font-semibold text-sm"
-                        >
-                          Görüntüle
-                        </button>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
+                        <div className="flex items-center justify-center space-x-2">
+                          <button
+                            onClick={() => handleEditCaseStudy(caseStudy)}
+                            className="text-blue-600 hover:text-blue-800 p-1"
+                            title="Not Ekle"
+                          >
+                            <span className="material-symbols-outlined text-sm">note_add</span>
+                          </button>
+                          <button
+                            onClick={() => handleEditCaseStudy(caseStudy)}
+                            className="text-green-600 hover:text-green-800 p-1"
+                            title="Görüntüle"
+                          >
+                            <span className="material-symbols-outlined text-sm">visibility</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))

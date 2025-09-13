@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { candidatesAPI, handleAPIError } from '../services/api';
 import { formatDateToDDMMYYYY } from '../utils/dateUtils';
@@ -17,14 +17,14 @@ const CandidateList = () => {
   const [statusOptions, setStatusOptions] = useState([]);
   const [positionOptions, setPositionOptions] = useState([]);
   const [selectedCandidates, setSelectedCandidates] = useState([]);
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const searchInputRef = useRef(null);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
-  // Load initial data
-  useEffect(() => {
-    loadCandidates();
-    loadOptions();
-  }, [currentPage, searchTerm, statusFilter, positionFilter]);
-
-  const loadCandidates = async () => {
+  // Load candidates function with useCallback
+  const loadCandidates = useCallback(async (searchValue = searchTerm) => {
     try {
       setLoading(true);
       setError(null);
@@ -32,9 +32,11 @@ const CandidateList = () => {
       const params = {
         page: currentPage,
         per_page: perPage,
-        search: searchTerm || undefined,
+        search: searchValue || undefined,
         status: statusFilter !== 'Tümü' ? statusFilter : undefined,
         position: positionFilter !== 'Tümü' ? positionFilter : undefined,
+        sort_by: sortBy,
+        sort_order: sortOrder,
       };
 
       const response = await candidatesAPI.getCandidates(params);
@@ -47,7 +49,39 @@ const CandidateList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, perPage, statusFilter, positionFilter, sortBy, sortOrder]);
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Load data when filters change
+  useEffect(() => {
+    loadCandidates(debouncedSearchTerm);
+  }, [loadCandidates, debouncedSearchTerm]);
+
+  // Keep focus on search input after re-render
+  useEffect(() => {
+    if (isSearchFocused && searchInputRef.current) {
+      const cursorPosition = searchInputRef.current.selectionStart;
+      setTimeout(() => {
+        if (searchInputRef.current) {
+          searchInputRef.current.focus();
+          searchInputRef.current.setSelectionRange(cursorPosition, cursorPosition);
+        }
+      }, 0);
+    }
+  }, [candidates, loading, isSearchFocused]);
+
+  // Load initial data
+  useEffect(() => {
+    loadOptions();
+  }, []);
 
   const loadOptions = async () => {
     try {
@@ -62,14 +96,30 @@ const CandidateList = () => {
   };
 
   const handleSearch = (e) => {
-    e.preventDefault();
+    setSearchTerm(e.target.value);
     setCurrentPage(1);
-    loadCandidates();
+  };
+
+  const handleSearchFocus = () => {
+    setIsSearchFocused(true);
+  };
+
+  const handleSearchBlur = () => {
+    setIsSearchFocused(false);
   };
 
   const handleFilterChange = () => {
     setCurrentPage(1);
-    loadCandidates();
+  };
+
+  const handleSort = (column) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortOrder('asc');
+    }
+    setCurrentPage(1);
   };
 
   const handleSelectAll = (e) => {
@@ -156,10 +206,13 @@ const CandidateList = () => {
                 </span>
               </div>
               <input
+                ref={searchInputRef}
                 type="text"
                 placeholder="İsim, pozisyon, e-posta, telefon ile ara..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearch}
+                onFocus={handleSearchFocus}
+                onBlur={handleSearchBlur}
                 className="flex w-full min-w-0 rounded-md text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-gray-300 bg-white h-11 placeholder:text-gray-400 pl-10 pr-4 text-base font-normal"
               />
             </div>
@@ -221,17 +274,57 @@ const CandidateList = () => {
                       onChange={handleSelectAll}
                     />
                   </th>
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600">
-                    Aday Adı
+                  <th 
+                    className="px-6 py-4 text-sm font-semibold text-gray-600 cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('first_name')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Aday Adı
+                      {sortBy === 'first_name' && (
+                        <span className="material-symbols-outlined text-sm">
+                          {sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+                        </span>
+                      )}
+                    </div>
                   </th>
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600">
-                    Pozisyon
+                  <th 
+                    className="px-6 py-4 text-sm font-semibold text-gray-600 cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('position')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Pozisyon
+                      {sortBy === 'position' && (
+                        <span className="material-symbols-outlined text-sm">
+                          {sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+                        </span>
+                      )}
+                    </div>
                   </th>
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600 text-center">
-                    Durum
+                  <th 
+                    className="px-6 py-4 text-sm font-semibold text-gray-600 text-center cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('status')}
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      Durum
+                      {sortBy === 'status' && (
+                        <span className="material-symbols-outlined text-sm">
+                          {sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+                        </span>
+                      )}
+                    </div>
                   </th>
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600">
-                    Başvuru Tarihi
+                  <th 
+                    className="px-6 py-4 text-sm font-semibold text-gray-600 cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('application_date')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Başvuru Tarihi
+                      {sortBy === 'application_date' && (
+                        <span className="material-symbols-outlined text-sm">
+                          {sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+                        </span>
+                      )}
+                    </div>
                   </th>
                   <th className="px-6 py-4 text-sm font-semibold text-gray-600 text-center">
                     İşlemler
@@ -270,25 +363,30 @@ const CandidateList = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                         {formatDate(candidate.application_date)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center space-x-2">
-                        <Link
-                          to={`/candidates/${candidate.id}`}
-                          className="text-blue-600 hover:text-blue-800 font-semibold text-sm"
-                        >
-                          Görüntüle
-                        </Link>
-                        <Link
-                          to={`/candidates/${candidate.id}/edit`}
-                          className="text-green-600 hover:text-green-800 font-semibold text-sm"
-                        >
-                          Düzenle
-                        </Link>
-                        <button
-                          onClick={() => handleDeleteCandidate(candidate.id)}
-                          className="text-red-600 hover:text-red-800 font-semibold text-sm"
-                        >
-                          Sil
-                        </button>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
+                        <div className="flex items-center justify-center space-x-2">
+                          <Link
+                            to={`/candidates/${candidate.id}`}
+                            className="text-blue-600 hover:text-blue-800 p-1"
+                            title="Görüntüle"
+                          >
+                            <span className="material-symbols-outlined text-sm">visibility</span>
+                          </Link>
+                          <Link
+                            to={`/candidates/${candidate.id}/edit`}
+                            className="text-green-600 hover:text-green-800 p-1"
+                            title="Düzenle"
+                          >
+                            <span className="material-symbols-outlined text-sm">edit</span>
+                          </Link>
+                          <button
+                            onClick={() => handleDeleteCandidate(candidate.id)}
+                            className="text-red-600 hover:text-red-800 p-1"
+                            title="Sil"
+                          >
+                            <span className="material-symbols-outlined text-sm">delete</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))

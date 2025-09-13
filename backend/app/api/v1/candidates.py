@@ -134,6 +134,8 @@ async def get_candidates(
     search: Optional[str] = None,
     status: Optional[str] = None,
     position: Optional[str] = None,
+    sort_by: str = "created_at",
+    sort_order: str = "desc",
     db: Session = Depends(get_db)
 ):
     """Get candidates with pagination and filtering"""
@@ -156,6 +158,25 @@ async def get_candidates(
         
         if position:
             query = query.filter(Candidate.position == position)
+        
+        # Sorting
+        if sort_by == "first_name":
+            order_field = Candidate.first_name
+        elif sort_by == "last_name":
+            order_field = Candidate.last_name
+        elif sort_by == "position":
+            order_field = Candidate.position
+        elif sort_by == "status":
+            order_field = Candidate.status
+        elif sort_by == "application_date":
+            order_field = Candidate.application_date
+        else:
+            order_field = Candidate.created_at
+        
+        if sort_order == "asc":
+            query = query.order_by(order_field.asc())
+        else:
+            query = query.order_by(order_field.desc())
         
         # Get total count
         total = query.count()
