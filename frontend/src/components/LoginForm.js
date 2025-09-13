@@ -108,10 +108,12 @@ const LoginForm = () => {
     <div className="bg-gray-50 min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" style={{fontFamily: 'Plus Jakarta Sans, Noto Sans, sans-serif'}}>
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <svg className="mx-auto h-12 w-auto text-[#137fec]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" strokeLinecap="round" strokeLinejoin="round"></path>
-          </svg>
-          <h2 className="mt-6 text-3xl font-bold tracking-tight text-gray-900">HR-ATS'e Hoş Geldiniz</h2>
+          <img 
+            src="/logo.png" 
+            alt="IK-ATS Logo" 
+            className="mx-auto h-16 w-auto"
+          />
+          <h2 className="mt-6 text-3xl font-bold tracking-tight text-gray-900">IK-ATS'e Hoş Geldiniz</h2>
           <p className="mt-2 text-sm text-gray-600">Lütfen hesabınıza giriş yapın</p>
         </div>
         
