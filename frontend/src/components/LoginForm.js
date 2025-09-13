@@ -21,6 +21,16 @@ const LoginForm = () => {
   useEffect(() => {
     console.log('🔍 Error state changed:', error);
   }, [error]);
+
+  // Test error state manually
+  const testErrorState = () => {
+    console.log('🧪 Testing error state manually...');
+    console.log('Current error state:', error);
+    
+    // Simulate an error by calling login with wrong credentials
+    console.log('🧪 Simulating login with wrong credentials...');
+    login('test@wrong.com', 'wrongpassword');
+  };
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -151,6 +161,13 @@ const LoginForm = () => {
           {process.env.NODE_ENV === 'development' && (
             <div className="mb-4 bg-blue-50 border border-blue-200 rounded-md p-2 text-xs text-blue-700">
               <strong>Debug:</strong> Error state: {error ? `"${error}"` : 'null'}
+              <br />
+              <button 
+                onClick={testErrorState}
+                className="mt-2 px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
+              >
+                Test Error State
+              </button>
             </div>
           )}
 

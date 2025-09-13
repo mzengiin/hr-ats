@@ -49,6 +49,7 @@ const authReducer = (state, action) => {
       };
 
     case AUTH_ACTIONS.LOGIN_FAILURE:
+      console.log('🔄 AuthContext Reducer: LOGIN_FAILURE dispatched with payload:', action.payload);
       return {
         ...state,
         loading: false,
@@ -260,12 +261,15 @@ export const AuthProvider = ({ children }) => {
   // Login function
   const login = useCallback(async (email, password) => {
     try {
+      console.log('🔐 AuthContext: Login started for:', email);
       dispatch({ type: AUTH_ACTIONS.LOGIN_START });
 
       const response = await api.post('/auth/login', {
         email,
         password,
       });
+
+      console.log('🔐 AuthContext: Login response:', response.data);
 
       const { access_token, refresh_token, user } = response.data;
 
@@ -283,13 +287,19 @@ export const AuthProvider = ({ children }) => {
         },
       });
 
+      console.log('✅ AuthContext: Login successful');
       return { success: true };
     } catch (error) {
+      console.log('❌ AuthContext: Login error:', error);
       const errorMessage = error.response?.data?.detail || error.message || 'Login failed';
+      console.log('❌ AuthContext: Error message:', errorMessage);
+      
       dispatch({
         type: AUTH_ACTIONS.LOGIN_FAILURE,
         payload: errorMessage,
       });
+      
+      console.log('❌ AuthContext: LOGIN_FAILURE dispatched with:', errorMessage);
       return { success: false, error: errorMessage };
     }
   }, []);
